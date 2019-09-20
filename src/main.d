@@ -25,8 +25,11 @@ void main()
     
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
         quit("Error: failed to init SDL: " ~ to!string(SDL_GetError()));
+        
+    uint windowWidth = 800;
+    uint windowHeight = 600;
     
-    auto window = SDL_CreateWindow(toStringz("wgpu-native"), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_SHOWN);
+    auto window = SDL_CreateWindow(toStringz("wgpu-native"), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, windowWidth, windowHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     SDL_SysWMinfo winInfo;
     SDL_GetWindowWMInfo(window, &winInfo);
     auto hwnd = winInfo.info.win.window;
@@ -51,15 +54,6 @@ void main()
         }
     };
     WGPUDeviceId device = wgpu_adapter_request_device(adapter, &deviceDescriptor);
-
-    // Shader compilation is currently done with dub postBuildCommands
-    /*
-    auto glsllang = execute(["./glslang", "shaders/triangle.vert", "-V", "-o", "shaders/triangle.vert.spv"]);
-    if (glsllang.status != 0) writeln("Compilation failed:\n", glsllang.output);
-    
-    glsllang = execute(["./glslang", "shaders/triangle.frag", "-V", "-o", "shaders/triangle.frag.spv"]);
-    if (glsllang.status != 0) writeln("Compilation failed:\n", glsllang.output);
-    */
     
     uint[] vs = cast(uint[])std.file.read("shaders/triangle.vert.spv");
     uint[] fs = cast(uint[])std.file.read("shaders/triangle.frag.spv");
@@ -143,14 +137,19 @@ void main()
     
     WGPUSurfaceId surface = wgpu_create_surface_from_windows_hwnd(hinstance, hwnd);
     
-    WGPUSwapChainDescriptor swapchainDescriptor = {
-        usage: WGPUTextureUsage_OUTPUT_ATTACHMENT,
-        format: WGPUTextureFormat.Bgra8Unorm,
-        width: 800,
-        height: 600,
-        present_mode: WGPUPresentMode.Vsync
-    };
-    WGPUSwapChainId swapchain = wgpu_device_create_swap_chain(device, surface, &swapchainDescriptor);
+    WGPUSwapChainId createSwapchain(uint w, uint h)
+    {
+        WGPUSwapChainDescriptor sd = {
+            usage: WGPUTextureUsage_OUTPUT_ATTACHMENT,
+            format: WGPUTextureFormat.Bgra8Unorm,
+            width: w,
+            height: h,
+            present_mode: WGPUPresentMode.Vsync
+        };
+        return wgpu_device_create_swap_chain(device, surface, &sd);
+    }
+    
+    WGPUSwapChainId swapchain = createSwapchain(windowWidth, windowHeight);
     
     WGPUSwapChainOutput nextTexture;
     WGPURenderPassColorAttachmentDescriptor[1] colorAttachments =
@@ -171,6 +170,16 @@ void main()
         {
             if (event.type == SDL_QUIT)
                 running = false;
+            else if (event.type == SDL_WINDOWEVENT)
+            {
+                if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+                {
+                    windowWidth = event.window.data1;
+                    windowHeight = event.window.data2;
+                    writeln(windowWidth, "x", windowHeight);
+                    swapchain = createSwapchain(windowWidth, windowHeight);
+                }
+            }
         }
         
         nextTexture = wgpu_swap_chain_get_next_texture(swapchain);
