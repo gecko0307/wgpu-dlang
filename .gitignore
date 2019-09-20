@@ -1,5 +1,6 @@
 *.a
 *.lib
+*.exe
 
 # Backup files
 *~
@@ -14,3 +15,7 @@ tests
 
 # spv files
 *.spv
+
+# Deploy files
+SDL2.dll
+wgpu_native.dll
