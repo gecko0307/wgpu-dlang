@@ -32,10 +32,24 @@ void main()
     auto hwnd = winInfo.info.win.window;
     auto hinstance = winInfo.info.win.hinstance;
     
-    WGPURequestAdapterOptions reqAdaptersOptions = WGPURequestAdapterOptions(WGPUPowerPreference.LowPower, 2 | 4 | 8);
+    WGPURequestAdapterOptions reqAdaptersOptions = 
+    {
+        power_preference: WGPUPowerPreference.LowPower, 
+        backends: 2 | 4 | 8
+    };
     WGPUAdapterId adapter = wgpu_request_adapter(&reqAdaptersOptions);
     
-    WGPUDeviceDescriptor deviceDescriptor = WGPUDeviceDescriptor(WGPUExtensions(false), WGPULimits(0));
+    WGPUDeviceDescriptor deviceDescriptor = 
+    {
+        extensions: 
+        {
+            anisotropic_filtering: false
+        },
+        limits: 
+        {
+            max_bind_groups: 0
+        }
+    };
     WGPUDeviceId device = wgpu_adapter_request_device(adapter, &deviceDescriptor);
 
     // Shader compilation is currently done with dub postBuildCommands
