@@ -18,10 +18,10 @@ void quit(string message)
 void main()
 {
     auto sdlSupport = loadSDL();
-    writeln(sdlSupport);
+    writeln("sdlSupport: ", sdlSupport);
     
     auto wgpuSupport = loadWGPU();
-    writeln(wgpuSupport);
+    writeln("wgpuSupport: ", wgpuSupport);
     
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
         quit("Error: failed to init SDL: " ~ to!string(SDL_GetError()));
@@ -145,7 +145,7 @@ void main()
             attachment: nextTexture.view_id,
             load_op: WGPULoadOp.Clear,
             store_op: WGPUStoreOp.Store,
-            clear_color: WGPUColor_GREEN
+            clear_color: WGPUColor(0.5, 0.5, 0.5, 1.0)
         }
     ];
     

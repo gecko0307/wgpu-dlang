@@ -5,7 +5,7 @@ import bindbc.loader;
 enum WGPUSupport {
     noLibrary,
     badLibrary,
-    goodLibrary
+    wgpu03
 }
 
 enum WGPUMAX_BIND_GROUPS = 4;
@@ -1036,7 +1036,7 @@ WGPUSupport loadWGPU(const(char)* libName)
     lib.bindSymbol(cast(void**)&wgpu_texture_destroy, "wgpu_texture_destroy");
     lib.bindSymbol(cast(void**)&wgpu_texture_view_destroy, "wgpu_texture_view_destroy");
     
-    loadedVersion = WGPUSupport.goodLibrary;
+    loadedVersion = WGPUSupport.wgpu03;
 
     if (errorCount() != errCount)
         return WGPUSupport.badLibrary;
