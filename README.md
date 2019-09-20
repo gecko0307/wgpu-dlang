@@ -1,5 +1,5 @@
 # wgpu-dlang
-[wgpu-native](https://github.com/gfx-rs/wgpu) binding for D. Includes a port of the triangle demo from wgpu-native repository.
+[wgpu](https://github.com/gfx-rs/wgpu) binding for D. Includes a port of the triangle demo from wgpu repository.
 
 ## What is WebGPU?
 It is a new low-level graphics and parallel computation API for the Web that works on top of Vulkan, DirectX 12, or Metal. It exposes the generic computational facilities available in today's GPUs in a cross-platform way.
