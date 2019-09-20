@@ -38,7 +38,7 @@ void main()
     WGPUDeviceDescriptor deviceDescriptor = WGPUDeviceDescriptor(WGPUExtensions(false), WGPULimits(0));
     WGPUDeviceId device = wgpu_adapter_request_device(adapter, &deviceDescriptor);
 
-    // Compile shaders
+    // Shader compilation is currently done with dub postBuildCommands
     /*
     auto glsllang = execute(["./glslang", "shaders/triangle.vert", "-V", "-o", "shaders/triangle.vert.spv"]);
     if (glsllang.status != 0) writeln("Compilation failed:\n", glsllang.output);
