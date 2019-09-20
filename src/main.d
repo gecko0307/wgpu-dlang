@@ -193,14 +193,14 @@ void main()
             color_attachments_length: 1,
             depth_stencil_attachment: null
         };
-        WGPURenderPassId rpass = wgpu_command_encoder_begin_render_pass(cmdEncoder, &renderPassDescriptor);
+        WGPURenderPassId pass = wgpu_command_encoder_begin_render_pass(cmdEncoder, &renderPassDescriptor);
         
-        wgpu_render_pass_set_pipeline(rpass, renderPipeline);
-        wgpu_render_pass_set_bind_group(rpass, 0, bindGroup, null, 0);
-        wgpu_render_pass_draw(rpass, 3, 1, 0, 0);
+        wgpu_render_pass_set_pipeline(pass, renderPipeline);
+        wgpu_render_pass_set_bind_group(pass, 0, bindGroup, null, 0);
+        wgpu_render_pass_draw(pass, 3, 1, 0, 0);
         
         WGPUQueueId queue = wgpu_device_get_queue(device);
-        wgpu_render_pass_end_pass(rpass);
+        wgpu_render_pass_end_pass(pass);
         
         WGPUCommandBufferId cmdBuf = wgpu_command_encoder_finish(cmdEncoder, null);
         wgpu_queue_submit(queue, &cmdBuf, 1);
