@@ -1,0 +1,16 @@
+*.a
+*.lib
+
+# Backup files
+*~
+
+# Dub files
+.dub
+dub.selections.json
+
+# Dub test files
+__test__library__
+tests
+
+# spv files
+*.spv

@@ -1,0 +1,44 @@
+{
+    "name": "main",
+    "description": "",
+    "homepage": "",
+    "license": "Boost",
+    "authors": [
+        "Timur Gafarov"
+    ],
+    
+    "dependencies": {
+        "bindbc-loader": "~>0.2.1",
+        "bindbc-sdl": "~>0.8.0"
+    },
+    
+    "versions": [
+        "SDL_207"
+    ],
+
+    "importPaths": [
+        "src"
+    ],
+
+    "buildRequirements":[
+        "allowWarnings"
+    ],
+
+    "sourcePaths": ["src"],
+    "mainSourceFile": "src/main.d",
+
+    "configurations": [
+        {
+            "name": "application",
+            "targetType": "executable"
+        }
+    ],
+    
+    "copyFiles-windows-x86_64": ["lib/x64/*.dll"],
+    
+    "postBuildCommands": [
+        "glslangValidator shaders/triangle.vert -V -o shaders/triangle.vert.spv",
+        "glslangValidator shaders/triangle.frag -V -o shaders/triangle.frag.spv"
+    ]
+}
+
