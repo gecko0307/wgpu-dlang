@@ -1,6 +1,7 @@
 module main;
 
 import core.stdc.stdlib;
+import core.stdc.string;
 import std.stdio;
 import std.file;
 import std.conv;
@@ -50,11 +51,44 @@ void main()
         },
         limits: 
         {
-            max_bind_groups: 0
+            max_bind_groups: 1
         }
     };
     WGPUDeviceId device = wgpu_adapter_request_device(adapter, &deviceDescriptor);
     
+    WGPUBindGroupLayoutBinding layoutBinding = 
+    {
+        binding: 0,
+        visibility: WGPUShaderStage_FRAGMENT,
+        ty: WGPUBindingType.UniformBuffer,
+        texture_dimension: WGPUTextureViewDimension.D1,
+        multisampled: false,
+        dynamic: false
+    };
+    WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor(&layoutBinding, 1);
+    WGPUBindGroupLayoutId bindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
+    
+    // Uniform buffer
+    float[4] data = [
+        1.0f, 0.5f, 0.0f, 0.0f
+    ];
+    size_t dataSize = data.length * float.sizeof;
+    WGPUBufferDescriptor bufferDescriptor = WGPUBufferDescriptor(dataSize, WGPUBufferUsage_UNIFORM | WGPUBufferUsage_MAP_WRITE);
+    
+    ubyte* bufferMem;
+    WGPUBufferId uniformBuffer = wgpu_device_create_buffer_mapped(device, &bufferDescriptor, &bufferMem);
+    memcpy(bufferMem, data.ptr, dataSize);
+    wgpu_buffer_unmap(uniformBuffer);
+    
+    auto bufBinding = WGPUBufferBinding(uniformBuffer, 0, dataSize);
+    WGPUBindingResource bufBindingResource;
+    bufBindingResource.tag = WGPUBindingResource_Tag.Buffer;
+    bufBindingResource.buffer = WGPUBindingResource_WGPUBuffer_Body(bufBinding);
+    WGPUBindGroupBinding binding = WGPUBindGroupBinding(0, bufBindingResource);
+    WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor(bindGroupLayout, &binding, 1);
+    WGPUBindGroupId bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
+    
+    // Pipeline
     uint[] vs = cast(uint[])std.file.read("shaders/triangle.vert.spv");
     uint[] fs = cast(uint[])std.file.read("shaders/triangle.frag.spv");
     
@@ -64,14 +98,7 @@ void main()
     WGPUShaderModuleDescriptor fsDescriptor = WGPUShaderModuleDescriptor(WGPUU32Array(fs.ptr, fs.length));
     WGPUShaderModuleId fragmentShader = wgpu_device_create_shader_module(device, &fsDescriptor);
     
-    WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor(null, 0);
-    WGPUBindGroupLayoutId bindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
-    
-    WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor(bindGroupLayout, null, 0);
-    WGPUBindGroupId bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
-    
     WGPUBindGroupLayoutId[1] bindGroupLayouts = [bindGroupLayout];
-    
     WGPUPipelineLayoutDescriptor pipelineLayoutDescriptor = WGPUPipelineLayoutDescriptor(bindGroupLayouts.ptr, bindGroupLayouts.length);
     WGPUPipelineLayoutId pipelineLayout = wgpu_device_create_pipeline_layout(device, &pipelineLayoutDescriptor);
     
@@ -135,6 +162,7 @@ void main()
     
     WGPURenderPipelineId renderPipeline = wgpu_device_create_render_pipeline(device, &renderPipelineDescriptor);
     
+    // Swapchain
     WGPUSurfaceId surface = wgpu_create_surface_from_windows_hwnd(hinstance, hwnd);
     
     WGPUSwapChainId createSwapchain(uint w, uint h)
@@ -162,6 +190,7 @@ void main()
         }
     ];
     
+    // Main loop
     bool running = true;
     SDL_Event event;
     while(running)
