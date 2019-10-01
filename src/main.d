@@ -16,26 +16,6 @@ void quit(string message)
     core.stdc.stdlib.exit(1);
 }
 
-struct BufferWriteInfo
-{
-    WGPUBufferId buffer;
-    void* data;
-    size_t dataSize;
-    bool complete;
-}
-
-extern(C) nothrow @nogc void bufferWriteCallback(WGPUBufferMapAsyncStatus status, ubyte* data, ubyte* userdata)
-{
-    BufferWriteInfo* info = cast(BufferWriteInfo*)userdata;
-
-    //if (status == WGPUBufferMapAsyncStatus.Success)
-    //memcpy(data, info.data, info.dataSize);
-    //writeln(status);
-    wgpu_buffer_unmap(info.buffer);
-
-    info.complete = true;
-}
-
 void main()
 {
     auto sdlSupport = loadSDL();
@@ -95,7 +75,11 @@ void main()
     float forward = 1.0f;
     size_t dataSize = data.length * float.sizeof;
     WGPUBufferDescriptor bufferDescriptor = WGPUBufferDescriptor(dataSize,
-        WGPUBufferUsage_UNIFORM | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE | WGPUBufferUsage_COPY_SRC | WGPUBufferUsage_COPY_DST);
+        WGPUBufferUsage_UNIFORM |
+        WGPUBufferUsage_MAP_READ |
+        WGPUBufferUsage_MAP_WRITE |
+        WGPUBufferUsage_COPY_SRC |
+        WGPUBufferUsage_COPY_DST);
 
     WGPUBufferId uniformBuffer = wgpu_device_create_buffer(device, &bufferDescriptor);
 
