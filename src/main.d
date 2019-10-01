@@ -69,10 +69,11 @@ void main()
     WGPUBindGroupLayoutId bindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
 
     // Vertex buffer
-    float[9] vertices = [
-         0.0, -0.5, 0.0,
-         0.5, 0.5, 0.0,
-        -0.5, 0.5, 0.0
+    float[12] vertices = [
+         0, 1, 0,
+         0, 0, 0,
+         1, 0, 0,
+         1, 1, 0
     ];
 
     ushort[6] indices = [
@@ -294,7 +295,7 @@ void main()
         size_t offset = 0;
         wgpu_render_pass_set_vertex_buffers(pass, 0, &vertexBuffer, &offset, 1);
         wgpu_render_pass_set_index_buffer(pass, indexBuffer, 0);
-        
+
         wgpu_render_pass_draw_indexed(pass, 6, 1, 0, 0, 0);
 
         WGPUQueueId queue = wgpu_device_get_queue(device);

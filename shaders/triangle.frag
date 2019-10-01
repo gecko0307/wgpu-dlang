@@ -7,6 +7,7 @@ layout(binding = 0) uniform Params
     vec4 color;
 } params;
 
-void main() {
+void main()
+{
     outColor = vec4(params.color.xyz, 1.0);
 }
