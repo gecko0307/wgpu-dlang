@@ -16,47 +16,67 @@ void quit(string message)
     core.stdc.stdlib.exit(1);
 }
 
+struct BufferWriteInfo
+{
+    WGPUBufferId buffer;
+    void* data;
+    size_t dataSize;
+    bool complete;
+}
+
+extern(C) nothrow @nogc void bufferWriteCallback(WGPUBufferMapAsyncStatus status, ubyte* data, ubyte* userdata)
+{
+    BufferWriteInfo* info = cast(BufferWriteInfo*)userdata;
+
+    //if (status == WGPUBufferMapAsyncStatus.Success)
+    //memcpy(data, info.data, info.dataSize);
+    //writeln(status);
+    wgpu_buffer_unmap(info.buffer);
+
+    info.complete = true;
+}
+
 void main()
 {
     auto sdlSupport = loadSDL();
     writeln("sdlSupport: ", sdlSupport);
-    
+
     auto wgpuSupport = loadWGPU();
     writeln("wgpuSupport: ", wgpuSupport);
-    
+
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
         quit("Error: failed to init SDL: " ~ to!string(SDL_GetError()));
-        
+
     uint windowWidth = 800;
     uint windowHeight = 600;
-    
+
     auto window = SDL_CreateWindow(toStringz("wgpu-native"), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, windowWidth, windowHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     SDL_SysWMinfo winInfo;
     SDL_GetWindowWMInfo(window, &winInfo);
     auto hwnd = winInfo.info.win.window;
     auto hinstance = winInfo.info.win.hinstance;
-    
-    WGPURequestAdapterOptions reqAdaptersOptions = 
+
+    WGPURequestAdapterOptions reqAdaptersOptions =
     {
-        power_preference: WGPUPowerPreference.LowPower, 
+        power_preference: WGPUPowerPreference.LowPower,
         backends: 2 | 4 | 8
     };
     WGPUAdapterId adapter = wgpu_request_adapter(&reqAdaptersOptions);
-    
-    WGPUDeviceDescriptor deviceDescriptor = 
+
+    WGPUDeviceDescriptor deviceDescriptor =
     {
-        extensions: 
+        extensions:
         {
             anisotropic_filtering: false
         },
-        limits: 
+        limits:
         {
             max_bind_groups: 1
         }
     };
     WGPUDeviceId device = wgpu_adapter_request_device(adapter, &deviceDescriptor);
-    
-    WGPUBindGroupLayoutBinding layoutBinding = 
+
+    WGPUBindGroupLayoutBinding layoutBinding =
     {
         binding: 0,
         visibility: WGPUShaderStage_FRAGMENT,
@@ -67,19 +87,18 @@ void main()
     };
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor(&layoutBinding, 1);
     WGPUBindGroupLayoutId bindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
-    
+
     // Uniform buffer
     float[4] data = [
         1.0f, 0.5f, 0.0f, 0.0f
     ];
+    float forward = 1.0f;
     size_t dataSize = data.length * float.sizeof;
-    WGPUBufferDescriptor bufferDescriptor = WGPUBufferDescriptor(dataSize, WGPUBufferUsage_UNIFORM | WGPUBufferUsage_MAP_WRITE);
-    
-    ubyte* bufferMem;
-    WGPUBufferId uniformBuffer = wgpu_device_create_buffer_mapped(device, &bufferDescriptor, &bufferMem);
-    memcpy(bufferMem, data.ptr, dataSize);
-    wgpu_buffer_unmap(uniformBuffer);
-    
+    WGPUBufferDescriptor bufferDescriptor = WGPUBufferDescriptor(dataSize,
+        WGPUBufferUsage_UNIFORM | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE | WGPUBufferUsage_COPY_SRC | WGPUBufferUsage_COPY_DST);
+
+    WGPUBufferId uniformBuffer = wgpu_device_create_buffer(device, &bufferDescriptor);
+
     auto bufBinding = WGPUBufferBinding(uniformBuffer, 0, dataSize);
     WGPUBindingResource bufBindingResource;
     bufBindingResource.tag = WGPUBindingResource_Tag.Buffer;
@@ -87,34 +106,34 @@ void main()
     WGPUBindGroupBinding binding = WGPUBindGroupBinding(0, bufBindingResource);
     WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor(bindGroupLayout, &binding, 1);
     WGPUBindGroupId bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
-    
+
     // Pipeline
     uint[] vs = cast(uint[])std.file.read("shaders/triangle.vert.spv");
     uint[] fs = cast(uint[])std.file.read("shaders/triangle.frag.spv");
-    
+
     WGPUShaderModuleDescriptor vsDescriptor = WGPUShaderModuleDescriptor(WGPUU32Array(vs.ptr, vs.length));
     WGPUShaderModuleId vertexShader = wgpu_device_create_shader_module(device, &vsDescriptor);
-    
+
     WGPUShaderModuleDescriptor fsDescriptor = WGPUShaderModuleDescriptor(WGPUU32Array(fs.ptr, fs.length));
     WGPUShaderModuleId fragmentShader = wgpu_device_create_shader_module(device, &fsDescriptor);
-    
+
     WGPUBindGroupLayoutId[1] bindGroupLayouts = [bindGroupLayout];
     WGPUPipelineLayoutDescriptor pipelineLayoutDescriptor = WGPUPipelineLayoutDescriptor(bindGroupLayouts.ptr, bindGroupLayouts.length);
     WGPUPipelineLayoutId pipelineLayout = wgpu_device_create_pipeline_layout(device, &pipelineLayoutDescriptor);
-    
-    WGPUProgrammableStageDescriptor vsStageDescriptor = 
+
+    WGPUProgrammableStageDescriptor vsStageDescriptor =
     {
         _module: vertexShader,
         entry_point: "main".ptr
     };
-    
-    WGPUProgrammableStageDescriptor fsStageDescriptor = 
+
+    WGPUProgrammableStageDescriptor fsStageDescriptor =
     {
         _module: fragmentShader,
         entry_point: "main".ptr
     };
-    
-    WGPURasterizationStateDescriptor rastStateDescriptor = 
+
+    WGPURasterizationStateDescriptor rastStateDescriptor =
     {
         front_face: WGPUFrontFace.Ccw,
         cull_mode: WGPUCullMode.None,
@@ -122,7 +141,7 @@ void main()
         depth_bias_slope_scale: 0.0,
         depth_bias_clamp: 0.0
     };
-    
+
     WGPUColorStateDescriptor colorStateDescriptor =
     {
         format: WGPUTextureFormat.Bgra8Unorm,
@@ -140,8 +159,8 @@ void main()
         },
         write_mask: WGPUColorWrite_ALL
     };
-    
-    WGPURenderPipelineDescriptor renderPipelineDescriptor = 
+
+    WGPURenderPipelineDescriptor renderPipelineDescriptor =
     {
         layout: pipelineLayout,
         vertex_stage: vsStageDescriptor,
@@ -159,12 +178,12 @@ void main()
         },
         sample_count: 1
     };
-    
+
     WGPURenderPipelineId renderPipeline = wgpu_device_create_render_pipeline(device, &renderPipelineDescriptor);
-    
+
     // Swapchain
     WGPUSurfaceId surface = wgpu_create_surface_from_windows_hwnd(hinstance, hwnd);
-    
+
     WGPUSwapChainId createSwapchain(uint w, uint h)
     {
         WGPUSwapChainDescriptor sd = {
@@ -176,9 +195,9 @@ void main()
         };
         return wgpu_device_create_swap_chain(device, surface, &sd);
     }
-    
+
     WGPUSwapChainId swapchain = createSwapchain(windowWidth, windowHeight);
-    
+
     WGPUSwapChainOutput nextTexture;
     WGPURenderPassColorAttachmentDescriptor[1] colorAttachments =
     [
@@ -189,7 +208,7 @@ void main()
             clear_color: WGPUColor(0.5, 0.5, 0.5, 1.0)
         }
     ];
-    
+
     // Main loop
     bool running = true;
     SDL_Event event;
@@ -210,31 +229,51 @@ void main()
                 }
             }
         }
-        
+
         nextTexture = wgpu_swap_chain_get_next_texture(swapchain);
         WGPUCommandEncoderDescriptor commandEncDescriptor = WGPUCommandEncoderDescriptor(0);
         WGPUCommandEncoderId cmdEncoder = wgpu_device_create_command_encoder(device, &commandEncDescriptor);
         colorAttachments[0].attachment = nextTexture.view_id;
-        
-        WGPURenderPassDescriptor renderPassDescriptor = 
+
+        data[2] += forward * 0.01f;
+        if (forward > 0.0f)
+        {
+            if (data[2] > 1.0f) { forward = -1; }
+        }
+        else
+        {
+            if (data[2] < 0.0f) { forward = 1; }
+        }
+        WGPUBufferId uniformBufferTmp;
+        {
+            ubyte* bufferMem;
+            uniformBufferTmp = wgpu_device_create_buffer_mapped(device, &bufferDescriptor, &bufferMem);
+            memcpy(bufferMem, data.ptr, dataSize);
+            wgpu_buffer_unmap(uniformBufferTmp);
+            wgpu_command_encoder_copy_buffer_to_buffer(cmdEncoder, uniformBufferTmp, 0, uniformBuffer, 0, dataSize);
+        }
+
+        WGPURenderPassDescriptor renderPassDescriptor =
         {
             color_attachments: colorAttachments.ptr,
             color_attachments_length: 1,
             depth_stencil_attachment: null
         };
         WGPURenderPassId pass = wgpu_command_encoder_begin_render_pass(cmdEncoder, &renderPassDescriptor);
-        
+
         wgpu_render_pass_set_pipeline(pass, renderPipeline);
         wgpu_render_pass_set_bind_group(pass, 0, bindGroup, null, 0);
         wgpu_render_pass_draw(pass, 3, 1, 0, 0);
-        
+
         WGPUQueueId queue = wgpu_device_get_queue(device);
         wgpu_render_pass_end_pass(pass);
-        
+
         WGPUCommandBufferId cmdBuf = wgpu_command_encoder_finish(cmdEncoder, null);
         wgpu_queue_submit(queue, &cmdBuf, 1);
         wgpu_swap_chain_present(swapchain);
+
+        wgpu_buffer_destroy(uniformBufferTmp);
     }
-    
+
     SDL_Quit();
 }
