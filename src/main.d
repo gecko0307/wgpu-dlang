@@ -542,7 +542,7 @@ void main()
         uniforms.modelViewMatrix =
             translationMatrix(Vector3f(0.0f, 0.0f, -5.0f)) *
             rotationMatrix(Axis.y, degtorad(angle)) *
-            scaleMatrix(Vector3f(2.0f, 2.0f, 2.0f));
+            scaleMatrix(Vector3f(3.0f, 3.0f, 3.0f));
 
         WGPURenderPassDescriptor renderPassDescriptor =
         {

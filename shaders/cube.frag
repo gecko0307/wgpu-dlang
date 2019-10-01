@@ -20,5 +20,5 @@ layout(location = 0) out vec4 outColor;
 void main()
 {
     vec4 tex = texture(sampler2D(myTexture, mySampler), inputs.texcoord);
-    outColor = vec4(tex.rgb, 1.0);
+    outColor = vec4(tex.rgb * inputs.color, 1.0);
 }
