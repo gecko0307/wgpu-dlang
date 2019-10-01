@@ -121,9 +121,9 @@ void main()
     float angle = 0.0f;
     float forward = 1.0f;
 
-    size_t dataSize = uniforms.sizeof;
+    size_t uniformsSize = uniforms.sizeof;
 
-    WGPUBufferDescriptor bufferDescriptor = WGPUBufferDescriptor(dataSize,
+    WGPUBufferDescriptor bufferDescriptor = WGPUBufferDescriptor(uniformsSize,
         WGPUBufferUsage_UNIFORM |
         WGPUBufferUsage_MAP_READ |
         WGPUBufferUsage_MAP_WRITE |
@@ -132,7 +132,7 @@ void main()
 
     WGPUBufferId uniformBuffer = wgpu_device_create_buffer(device, &bufferDescriptor);
 
-    auto bufBinding = WGPUBufferBinding(uniformBuffer, 0, dataSize);
+    auto bufBinding = WGPUBufferBinding(uniformBuffer, 0, uniformsSize);
     WGPUBindingResource bufBindingResource;
     bufBindingResource.tag = WGPUBindingResource_Tag.Buffer;
     bufBindingResource.buffer = WGPUBindingResource_WGPUBuffer_Body(bufBinding);
@@ -297,9 +297,9 @@ void main()
         {
             ubyte* bufferMem;
             uniformBufferTmp = wgpu_device_create_buffer_mapped(device, &bufferDescriptor, &bufferMem);
-            memcpy(bufferMem, &uniforms, dataSize);
+            memcpy(bufferMem, &uniforms, uniformsSize);
             wgpu_buffer_unmap(uniformBufferTmp);
-            wgpu_command_encoder_copy_buffer_to_buffer(cmdEncoder, uniformBufferTmp, 0, uniformBuffer, 0, dataSize);
+            wgpu_command_encoder_copy_buffer_to_buffer(cmdEncoder, uniformBufferTmp, 0, uniformBuffer, 0, uniformsSize);
         }
 
         angle += 1.0f;
