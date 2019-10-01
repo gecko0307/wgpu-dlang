@@ -2,12 +2,13 @@
 
 layout(location = 0) out vec4 outColor;
 
-layout(binding = 0) uniform Params
+layout(binding = 0) uniform Uniforms
 {
     vec4 color;
-} params;
+    mat4 projectionMatrix;
+} uniforms;
 
 void main()
 {
-    outColor = vec4(params.color.xyz, 1.0);
+    outColor = vec4(uniforms.color.xyz, 1.0);
 }

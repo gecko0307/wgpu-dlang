@@ -10,6 +10,9 @@ import std.process;
 import bindbc.sdl;
 import bindbc.wgpu;
 
+import dlib.image;
+import dlib.math;
+
 void quit(string message)
 {
     writeln(message);
@@ -30,7 +33,10 @@ void main()
     uint windowWidth = 800;
     uint windowHeight = 600;
 
-    auto window = SDL_CreateWindow(toStringz("wgpu-native"), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, windowWidth, windowHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    auto window = SDL_CreateWindow(toStringz("WebGPU Demo"),
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        windowWidth, windowHeight,
+        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     SDL_SysWMinfo winInfo;
     SDL_GetWindowWMInfo(window, &winInfo);
     auto hwnd = winInfo.info.win.window;
@@ -59,7 +65,7 @@ void main()
     WGPUBindGroupLayoutBinding layoutBinding =
     {
         binding: 0,
-        visibility: WGPUShaderStage_FRAGMENT,
+        visibility: WGPUShaderStage_VERTEX | WGPUShaderStage_FRAGMENT,
         ty: WGPUBindingType.UniformBuffer,
         texture_dimension: WGPUTextureViewDimension.D1,
         multisampled: false,
@@ -70,10 +76,10 @@ void main()
 
     // Vertex buffer
     float[12] vertices = [
-         0, 1, 0,
-         0, 0, 0,
-         1, 0, 0,
-         1, 1, 0
+        -0.5,  0.5, 0.0,
+        -0.5, -0.5, 0.0,
+         0.5, -0.5, 0.0,
+         0.5,  0.5, 0.0
     ];
 
     ushort[6] indices = [
@@ -98,11 +104,25 @@ void main()
     wgpu_buffer_unmap(indexBuffer);
 
     // Uniform buffer
-    float[4] data = [
-        1.0f, 0.5f, 0.0f, 0.0f
-    ];
+    struct Uniforms
+    {
+        Color4f color;
+        Matrix4x4f modelViewMatrix;
+        Matrix4x4f projectionMatrix;
+    }
+
+    Uniforms uniforms =
+    {
+        color: Color4f(1.0f, 0.5f, 0.0f, 0.0f),
+        modelViewMatrix: Matrix4x4f.identity,
+        projectionMatrix: orthoMatrix(0.0f, windowWidth, windowHeight, 0.0f, -1000.0f, 1000.0f)
+    };
+
+    float angle = 0.0f;
     float forward = 1.0f;
-    size_t dataSize = data.length * float.sizeof;
+
+    size_t dataSize = uniforms.sizeof;
+
     WGPUBufferDescriptor bufferDescriptor = WGPUBufferDescriptor(dataSize,
         WGPUBufferUsage_UNIFORM |
         WGPUBufferUsage_MAP_READ |
@@ -253,6 +273,7 @@ void main()
                     windowWidth = event.window.data1;
                     windowHeight = event.window.data2;
                     writeln(windowWidth, "x", windowHeight);
+                    uniforms.projectionMatrix = orthoMatrix(0.0f, windowWidth, windowHeight, 0.0f, -1000.0f, 1000.0f);
                     swapchain = createSwapchain(windowWidth, windowHeight);
                 }
             }
@@ -263,23 +284,29 @@ void main()
         WGPUCommandEncoderId cmdEncoder = wgpu_device_create_command_encoder(device, &commandEncDescriptor);
         colorAttachments[0].attachment = nextTexture.view_id;
 
-        data[2] += forward * 0.01f;
+        uniforms.color.b += forward * 0.01f;
         if (forward > 0.0f)
         {
-            if (data[2] > 1.0f) { forward = -1; }
+            if (uniforms.color.b > 1.0f) { forward = -1; }
         }
         else
         {
-            if (data[2] < 0.0f) { forward = 1; }
+            if (uniforms.color.b < 0.0f) { forward = 1; }
         }
         WGPUBufferId uniformBufferTmp;
         {
             ubyte* bufferMem;
             uniformBufferTmp = wgpu_device_create_buffer_mapped(device, &bufferDescriptor, &bufferMem);
-            memcpy(bufferMem, data.ptr, dataSize);
+            memcpy(bufferMem, &uniforms, dataSize);
             wgpu_buffer_unmap(uniformBufferTmp);
             wgpu_command_encoder_copy_buffer_to_buffer(cmdEncoder, uniformBufferTmp, 0, uniformBuffer, 0, dataSize);
         }
+
+        angle += 1.0f;
+        uniforms.modelViewMatrix =
+            translationMatrix(Vector3f(windowWidth * 0.5f, windowHeight * 0.5f, 0.0f)) *
+            rotationMatrix(Axis.z, degtorad(angle)) *
+            scaleMatrix(Vector3f(200.0f, 200.0f, 200.0f));
 
         WGPURenderPassDescriptor renderPassDescriptor =
         {
