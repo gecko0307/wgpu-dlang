@@ -68,6 +68,34 @@ void main()
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor(&layoutBinding, 1);
     WGPUBindGroupLayoutId bindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
 
+    // Vertex buffer
+    float[9] vertices = [
+         0.0, -0.5, 0.0,
+         0.5, 0.5, 0.0,
+        -0.5, 0.5, 0.0
+    ];
+
+    ushort[6] indices = [
+        0, 1, 2,
+        0, 2, 3
+    ];
+
+    size_t verticesSize = vertices.length * float.sizeof;
+    WGPUBufferDescriptor verticesBufferDescriptor = WGPUBufferDescriptor(verticesSize,
+        WGPUBufferUsage_VERTEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
+    ubyte* vertexBufferMem;
+    WGPUBufferId vertexBuffer = wgpu_device_create_buffer_mapped(device, &verticesBufferDescriptor, &vertexBufferMem);
+    memcpy(vertexBufferMem, vertices.ptr, verticesSize);
+    wgpu_buffer_unmap(vertexBuffer);
+
+    size_t indicesSize = indices.length * ushort.sizeof;
+    WGPUBufferDescriptor indicesBufferDescriptor = WGPUBufferDescriptor(indicesSize,
+        WGPUBufferUsage_INDEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
+    ubyte* indexBufferMem;
+    WGPUBufferId indexBuffer = wgpu_device_create_buffer_mapped(device, &indicesBufferDescriptor, &indexBufferMem);
+    memcpy(indexBufferMem, indices.ptr, indicesSize);
+    wgpu_buffer_unmap(indexBuffer);
+
     // Uniform buffer
     float[4] data = [
         1.0f, 0.5f, 0.0f, 0.0f
@@ -144,6 +172,21 @@ void main()
         write_mask: WGPUColorWrite_ALL
     };
 
+    WGPUVertexAttributeDescriptor attribute =
+    {
+        offset: 0,
+        format: WGPUVertexFormat.Float3,
+        shader_location: 0
+    };
+
+    WGPUVertexBufferDescriptor vertexBufferDescriptor =
+    {
+        stride: float.sizeof * 3,
+        step_mode: WGPUInputStepMode.Vertex,
+        attributes: &attribute,
+        attributes_length: 1
+    };
+
     WGPURenderPipelineDescriptor renderPipelineDescriptor =
     {
         layout: pipelineLayout,
@@ -157,8 +200,8 @@ void main()
         vertex_input:
         {
             index_format: WGPUIndexFormat.Uint16,
-            vertex_buffers: null,
-            vertex_buffers_length: 0,
+            vertex_buffers: &vertexBufferDescriptor,
+            vertex_buffers_length: 1,
         },
         sample_count: 1
     };
@@ -247,7 +290,12 @@ void main()
 
         wgpu_render_pass_set_pipeline(pass, renderPipeline);
         wgpu_render_pass_set_bind_group(pass, 0, bindGroup, null, 0);
-        wgpu_render_pass_draw(pass, 3, 1, 0, 0);
+
+        size_t offset = 0;
+        wgpu_render_pass_set_vertex_buffers(pass, 0, &vertexBuffer, &offset, 1);
+        wgpu_render_pass_set_index_buffer(pass, indexBuffer, 0);
+        
+        wgpu_render_pass_draw_indexed(pass, 6, 1, 0, 0, 0);
 
         WGPUQueueId queue = wgpu_device_get_queue(device);
         wgpu_render_pass_end_pass(pass);
