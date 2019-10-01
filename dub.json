@@ -38,8 +38,8 @@
     "copyFiles-windows-x86_64": ["lib/x64/*.dll"],
     
     "postBuildCommands": [
-        "glslangValidator shaders/triangle.vert -V -o shaders/triangle.vert.spv",
-        "glslangValidator shaders/triangle.frag -V -o shaders/triangle.frag.spv"
+        "glslangValidator shaders/cube.vert -V -o shaders/cube.vert.spv",
+        "glslangValidator shaders/cube.frag -V -o shaders/cube.frag.spv"
     ]
 }
 

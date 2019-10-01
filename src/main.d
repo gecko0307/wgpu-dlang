@@ -200,8 +200,8 @@ void main()
     WGPUBindGroupId bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
 
     // Pipeline
-    uint[] vs = cast(uint[])std.file.read("shaders/triangle.vert.spv");
-    uint[] fs = cast(uint[])std.file.read("shaders/triangle.frag.spv");
+    uint[] vs = cast(uint[])std.file.read("shaders/cube.vert.spv");
+    uint[] fs = cast(uint[])std.file.read("shaders/cube.frag.spv");
 
     WGPUShaderModuleDescriptor vsDescriptor = WGPUShaderModuleDescriptor(WGPUU32Array(vs.ptr, vs.length));
     WGPUShaderModuleId vertexShader = wgpu_device_create_shader_module(device, &vsDescriptor);
