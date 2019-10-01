@@ -267,6 +267,29 @@ void main()
         attributes_length: 1
     };
 
+    WGPUDepthStencilStateDescriptor depthStencilStateDecsriptor =
+    {
+        format: WGPUTextureFormat.Depth24PlusStencil8,
+        depth_write_enabled: true,
+        depth_compare: WGPUCompareFunction.Less,
+        stencil_front:
+        {
+            compare: WGPUCompareFunction.Always,
+            fail_op: WGPUStencilOperation.Keep,
+            depth_fail_op: WGPUStencilOperation.Keep,
+            pass_op: WGPUStencilOperation.Keep
+        },
+        stencil_back:
+        {
+            compare: WGPUCompareFunction.Always,
+            fail_op: WGPUStencilOperation.Keep,
+            depth_fail_op: WGPUStencilOperation.Keep,
+            pass_op: WGPUStencilOperation.Keep
+        },
+        stencil_read_mask: 0x00000000,
+        stencil_write_mask: 0x00000000
+    };
+
     WGPURenderPipelineDescriptor renderPipelineDescriptor =
     {
         layout: pipelineLayout,
@@ -276,7 +299,7 @@ void main()
         rasterization_state: &rastStateDescriptor,
         color_states: &colorStateDescriptor,
         color_states_length: 1,
-        depth_stencil_state: null,
+        depth_stencil_state: &depthStencilStateDecsriptor,
         vertex_input:
         {
             index_format: WGPUIndexFormat.Uint16,
@@ -305,16 +328,70 @@ void main()
 
     WGPUSwapChainId swapchain = createSwapchain(windowWidth, windowHeight);
 
+    // Render pass attachments
     WGPUSwapChainOutput nextTexture;
-    WGPURenderPassColorAttachmentDescriptor[1] colorAttachments =
-    [
+    WGPURenderPassColorAttachmentDescriptor colorAttachment =
+    {
+        attachment: nextTexture.view_id,
+        load_op: WGPULoadOp.Clear,
+        store_op: WGPUStoreOp.Store,
+        clear_color: WGPUColor(0.5, 0.5, 0.5, 1.0)
+    };
+
+    WGPUTextureId depthTexture;
+    WGPUTextureViewId depthAttachment;
+    auto createDepthTexture(uint w, uint h)
+    {
+        if (depthAttachment)
         {
-            attachment: nextTexture.view_id,
-            load_op: WGPULoadOp.Clear,
-            store_op: WGPUStoreOp.Store,
-            clear_color: WGPUColor(0.5, 0.5, 0.5, 1.0)
+            writeln("wgpu_texture_view_destroy(depthAttachment)");
+            wgpu_texture_view_destroy(depthAttachment);
         }
-    ];
+        if (depthTexture)
+        {
+            writeln("wgpu_texture_destroy(depthTexture)");
+            wgpu_texture_destroy(depthTexture);
+        }
+        
+        WGPUTextureDescriptor depthTextureDescriptor =
+        {
+            size: WGPUExtent3d(w, h, 1),
+            array_layer_count: 1,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: WGPUTextureDimension.D2,
+            format: WGPUTextureFormat.Depth24PlusStencil8,
+            usage: WGPUTextureUsage_OUTPUT_ATTACHMENT
+        };
+        depthTexture = wgpu_device_create_texture(device, &depthTextureDescriptor);
+
+        WGPUTextureViewDescriptor depthTextureViewDescriptor =
+        {
+            format: WGPUTextureFormat.Depth24PlusStencil8,
+            dimension: WGPUTextureViewDimension.D2,
+            aspect: WGPUTextureAspect.DepthOnly,
+            base_mip_level: 0,
+            level_count: 1,
+            base_array_layer: 0,
+            array_layer_count: 1
+        };
+        depthAttachment = wgpu_texture_create_view(depthTexture, &depthTextureViewDescriptor);
+
+        WGPURenderPassDepthStencilAttachmentDescriptor_TextureViewId depthStencilAttachment =
+        {
+            attachment: depthAttachment,
+            depth_load_op: WGPULoadOp.Clear,
+            depth_store_op: WGPUStoreOp.Store,
+            clear_depth: 1.0f,
+            stencil_load_op: WGPULoadOp.Clear,
+            stencil_store_op: WGPUStoreOp.Store,
+            clear_stencil: 0
+        };
+        
+        return depthStencilAttachment;
+    }
+    
+    auto depthStencilAttachment = createDepthTexture(windowWidth, windowHeight);
 
     // Main loop
     bool running = true;
@@ -335,14 +412,16 @@ void main()
                     aspectRatio = cast(float)windowWidth / cast(float)windowHeight;
                     uniforms.projectionMatrix = perspectiveMatrix(fov, aspectRatio, 0.01f, 1000.0f);
                     swapchain = createSwapchain(windowWidth, windowHeight);
+                    depthStencilAttachment = createDepthTexture(windowWidth, windowHeight);
                 }
             }
         }
 
         nextTexture = wgpu_swap_chain_get_next_texture(swapchain);
+        colorAttachment.attachment = nextTexture.view_id;
+
         WGPUCommandEncoderDescriptor commandEncDescriptor = WGPUCommandEncoderDescriptor(0);
         WGPUCommandEncoderId cmdEncoder = wgpu_device_create_command_encoder(device, &commandEncDescriptor);
-        colorAttachments[0].attachment = nextTexture.view_id;
 
         uniforms.color.b += forward * 0.01f;
         if (forward > 0.0f)
@@ -370,9 +449,9 @@ void main()
 
         WGPURenderPassDescriptor renderPassDescriptor =
         {
-            color_attachments: colorAttachments.ptr,
+            color_attachments: &colorAttachment,
             color_attachments_length: 1,
-            depth_stencil_attachment: null
+            depth_stencil_attachment: &depthStencilAttachment
         };
         WGPURenderPassId pass = wgpu_command_encoder_begin_render_pass(cmdEncoder, &renderPassDescriptor);
 

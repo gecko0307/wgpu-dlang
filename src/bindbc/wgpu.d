@@ -293,7 +293,7 @@ alias WGPUAdapterId = WGPUId_Adapter_Dummy;
 
 struct WGPUExtensions
 {
-    bool anisotropic_filtering;
+    ubyte anisotropic_filtering;
 }
 
 struct WGPULimits
@@ -488,8 +488,8 @@ struct WGPUBindGroupLayoutBinding
     WGPUShaderStage visibility;
     WGPUBindingType ty;
     WGPUTextureViewDimension texture_dimension;
-    bool multisampled;
-    bool dynamic;
+    ubyte multisampled;
+    ubyte dynamic;
 }
 
 struct WGPUBindGroupLayoutDescriptor
@@ -591,7 +591,7 @@ struct WGPUStencilStateFaceDescriptor
 struct WGPUDepthStencilStateDescriptor
 {
     WGPUTextureFormat format;
-    bool depth_write_enabled;
+    ubyte depth_write_enabled;
     WGPUCompareFunction depth_compare;
     WGPUStencilStateFaceDescriptor stencil_front;
     WGPUStencilStateFaceDescriptor stencil_back;
@@ -636,7 +636,7 @@ struct WGPURenderPipelineDescriptor
     WGPUVertexInputDescriptor vertex_input;
     uint sample_count;
     uint sample_mask;
-    bool alpha_to_coverage_enabled;
+    ubyte alpha_to_coverage_enabled;
 }
 
 struct WGPUSamplerDescriptor
@@ -796,7 +796,7 @@ extern(C) @nogc nothrow
     alias da_wgpu_device_get_limits = void function(WGPUDeviceId _device_id, WGPULimits *limits);
 
     alias da_wgpu_device_get_queue = WGPUQueueId function(WGPUDeviceId device_id);
-    alias da_wgpu_device_poll = void function(WGPUDeviceId device_id, bool force_wait);
+    alias da_wgpu_device_poll = void function(WGPUDeviceId device_id, ubyte force_wait);
     alias da_wgpu_queue_submit = void function(WGPUQueueId queue_id,
                            const WGPUCommandBufferId* command_buffers,
                            size_t command_buffers_length);
