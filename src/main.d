@@ -91,12 +91,14 @@ void main()
         },
         limits:
         {
-            max_bind_groups: 1
+            max_bind_groups: 3
         }
     };
     WGPUDeviceId device = wgpu_adapter_request_device(adapter, &deviceDescriptor);
+    
+    WGPUQueueId queue = wgpu_device_get_queue(device);
 
-    WGPUBindGroupLayoutBinding layoutBinding =
+    WGPUBindGroupLayoutBinding layoutBindingUniforms =
     {
         binding: 0,
         visibility: WGPUShaderStage_VERTEX | WGPUShaderStage_FRAGMENT,
@@ -105,45 +107,51 @@ void main()
         multisampled: false,
         dynamic: false
     };
-    WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor(&layoutBinding, 1);
-    WGPUBindGroupLayoutId bindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
+    WGPUBindGroupLayoutBinding layoutBindingSamplers =
+    {
+        binding: 1,
+        visibility: WGPUShaderStage_FRAGMENT,
+        ty: WGPUBindingType.Sampler,
+        texture_dimension: WGPUTextureViewDimension.D2,
+        multisampled: false,
+        dynamic: false
+    };
+    WGPUBindGroupLayoutBinding layoutBindingTextures =
+    {
+        binding: 2,
+        visibility: WGPUShaderStage_FRAGMENT,
+        ty: WGPUBindingType.SampledTexture,
+        texture_dimension: WGPUTextureViewDimension.D2,
+        multisampled: false,
+        dynamic: false
+    };
+    WGPUBindGroupLayoutBinding[] bindGroupLayoutBindings = 
+    [
+        layoutBindingUniforms, layoutBindingSamplers, layoutBindingTextures
+    ];
+    WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor(bindGroupLayoutBindings.ptr, bindGroupLayoutBindings.length);
+    WGPUBindGroupLayoutId uniformsBindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
 
     // Vertex buffer
     float[] vertices = [
-        // front
-        -1.0, -1.0,  1.0,
-         1.0, -1.0,  1.0,
-         1.0,  1.0,  1.0,
-        -1.0,  1.0,  1.0,
-        // back
-        -1.0, -1.0, -1.0,
-         1.0, -1.0, -1.0,
-         1.0,  1.0, -1.0,
-        -1.0,  1.0, -1.0
+        0.5f, 0.5f, 0.5f, 1, 0,  -0.5f, 0.5f, 0.5f, 0, 0,  -0.5f,-0.5f, 0.5f, 0, 1,  0.5f,-0.5f, 0.5f, 1, 1, // v0,v1,v2,v3 (front)
+        0.5f, 0.5f, 0.5f, 0, 0,   0.5f,-0.5f, 0.5f, 0, 1,   0.5f,-0.5f,-0.5f, 1, 1,  0.5f, 0.5f,-0.5f, 1, 0, // v0,v3,v4,v5 (right)
+        0.5f, 0.5f, 0.5f, 1, 1,   0.5f, 0.5f,-0.5f, 1, 0,  -0.5f, 0.5f,-0.5f, 0, 0, -0.5f, 0.5f, 0.5f, 0, 1, // v0,v5,v6,v1 (top)
+       -0.5f, 0.5f, 0.5f, 1, 0,  -0.5f, 0.5f,-0.5f, 0, 0,  -0.5f,-0.5f,-0.5f, 0, 1, -0.5f,-0.5f, 0.5f, 1, 1, // v1,v6,v7,v2 (left)
+       -0.5f,-0.5f,-0.5f, 0, 1,   0.5f,-0.5f,-0.5f, 1, 1,   0.5f,-0.5f, 0.5f, 1, 0, -0.5f,-0.5f, 0.5f, 0, 0, // v7,v4,v3,v2 (bottom)
+        0.5f,-0.5f,-0.5f, 0, 1,  -0.5f,-0.5f,-0.5f, 1, 1,  -0.5f, 0.5f,-0.5f, 1, 0,  0.5f, 0.5f,-0.5f, 0, 0  // v4,v7,v6,v5 (back)
     ];
 
     ushort[] indices = [
-        // front
-		0, 1, 2,
-		2, 3, 0,
-		// right
-		1, 5, 6,
-		6, 2, 1,
-		// back
-		7, 6, 5,
-		5, 4, 7,
-		// left
-		4, 0, 3,
-		3, 7, 4,
-		// bottom
-		4, 5, 1,
-		1, 0, 4,
-		// top
-		3, 2, 6,
-		6, 7, 3
+        0, 1, 2,   2, 3, 0,    // v0-v1-v2, v2-v3-v0 (front)
+        4, 5, 6,   6, 7, 4,    // v0-v3-v4, v4-v5-v0 (right)
+        8, 9,10,  10,11, 8,    // v0-v5-v6, v6-v1-v0 (top)
+        12,13,14,  14,15,12,    // v1-v6-v7, v7-v2-v1 (left)
+        16,17,18,  18,19,16,    // v7-v4-v3, v3-v2-v7 (bottom)
+        20,21,22,  22,23,20     // v4-v7-v6, v6-v5-v4 (back)
     ];
-
-    size_t verticesSize = vertices.sizeOf;
+    
+    size_t verticesSize = vertices.length * float.sizeof;
     WGPUBufferDescriptor verticesBufferDescriptor = WGPUBufferDescriptor(verticesSize,
         WGPUBufferUsage_VERTEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
     ubyte* vertexBufferMem;
@@ -151,13 +159,84 @@ void main()
     memcpy(vertexBufferMem, vertices.ptr, verticesSize);
     wgpu_buffer_unmap(vertexBuffer);
 
-    size_t indicesSize = indices.sizeOf;
+    size_t indicesSize = indices.length * ushort.sizeof;
     WGPUBufferDescriptor indicesBufferDescriptor = WGPUBufferDescriptor(indicesSize,
         WGPUBufferUsage_INDEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
     ubyte* indexBufferMem;
     WGPUBufferId indexBuffer = wgpu_device_create_buffer_mapped(device, &indicesBufferDescriptor, &indexBufferMem);
     memcpy(indexBufferMem, indices.ptr, indicesSize);
     wgpu_buffer_unmap(indexBuffer);
+    
+    // Texture
+    auto img = loadPNG("data/texture.png");
+    
+    WGPUTextureDescriptor textureDescriptor =
+    {
+        size: WGPUExtent3d(img.width, img.height, 1),
+        array_layer_count: 1,
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: WGPUTextureDimension.D2,
+        format: WGPUTextureFormat.Rgba8Unorm,
+        usage: WGPUTextureUsage_SAMPLED | WGPUTextureUsage_COPY_DST
+    };
+    WGPUTextureId texture = wgpu_device_create_texture(device, &textureDescriptor);
+
+    WGPUTextureViewDescriptor textureViewDescriptor =
+    {
+        format: WGPUTextureFormat.Rgba8Unorm,
+        dimension: WGPUTextureViewDimension.D2,
+        aspect: WGPUTextureAspect.All,
+        base_mip_level: 0,
+        level_count: 1,
+        base_array_layer: 0,
+        array_layer_count: 1
+    };
+    WGPUTextureViewId textureView = wgpu_texture_create_view(texture, &textureViewDescriptor);
+    
+    size_t texBufferSize = img.data.length;
+    writeln(texBufferSize);
+    WGPUBufferDescriptor texBufferDescriptor = WGPUBufferDescriptor(texBufferSize,
+        WGPUBufferUsage_STORAGE | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE | WGPUBufferUsage_COPY_SRC);
+    ubyte* texBufferMem;
+    WGPUBufferId textureBuffer = wgpu_device_create_buffer_mapped(device, &texBufferDescriptor, &texBufferMem);
+    memcpy(texBufferMem, img.data.ptr, texBufferSize);
+    wgpu_buffer_unmap(textureBuffer);
+    
+    WGPUCommandEncoderDescriptor texCopyDescriptor = WGPUCommandEncoderDescriptor(0);
+    WGPUCommandEncoderId texCopyCmdEncoder = wgpu_device_create_command_encoder(device, &texCopyDescriptor);
+    WGPUBufferCopyView srcBufferCopyView = 
+    {
+        buffer: textureBuffer,
+        offset: 0,
+        row_pitch: img.width * 4,
+        image_height: img.height
+    };
+    WGPUTextureCopyView dstTextureCopyView =
+    {
+        texture: texture,
+        mip_level: 0,
+        array_layer: 0,
+        origin: WGPUOrigin3d(0.0f, 0.0f, 0.0f)
+    };
+    wgpu_command_encoder_copy_buffer_to_texture(texCopyCmdEncoder, &srcBufferCopyView, &dstTextureCopyView, WGPUExtent3d(img.width, img.height, 1));
+    WGPUCommandBufferId texCopyCmdBuf = wgpu_command_encoder_finish(texCopyCmdEncoder, null);
+    wgpu_queue_submit(queue, &texCopyCmdBuf, 1);
+    
+    // Sampler
+    WGPUSamplerDescriptor samplerDescriptor = 
+    {
+        address_mode_u: WGPUAddressMode.Repeat,
+        address_mode_v: WGPUAddressMode.Repeat,
+        address_mode_w: WGPUAddressMode.Repeat,
+        mag_filter: WGPUFilterMode.Linear,
+        min_filter: WGPUFilterMode.Linear,
+        mipmap_filter: WGPUFilterMode.Linear,
+        lod_min_clamp: 0.0f,
+        lod_max_clamp: 0.0f,
+        compare_function: WGPUCompareFunction.Always
+    };
+    WGPUSamplerId sampler = wgpu_device_create_sampler(device, &samplerDescriptor);
 
     // Uniform buffer
     struct Uniforms
@@ -192,11 +271,27 @@ void main()
     WGPUBufferId uniformBuffer = wgpu_device_create_buffer(device, &bufferDescriptor);
 
     auto bufBinding = WGPUBufferBinding(uniformBuffer, 0, uniformsSize);
+    
     WGPUBindingResource bufBindingResource;
     bufBindingResource.tag = WGPUBindingResource_Tag.Buffer;
     bufBindingResource.buffer = WGPUBindingResource_WGPUBuffer_Body(bufBinding);
-    WGPUBindGroupBinding binding = WGPUBindGroupBinding(0, bufBindingResource);
-    WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor(bindGroupLayout, &binding, 1);
+    WGPUBindGroupBinding uniformsBinding = WGPUBindGroupBinding(0, bufBindingResource);
+    
+    WGPUBindingResource samplerBindingResource;
+    samplerBindingResource.tag = WGPUBindingResource_Tag.Sampler;
+    samplerBindingResource.sampler = WGPUBindingResource_WGPUSampler_Body(sampler);
+    WGPUBindGroupBinding samplerBinding = WGPUBindGroupBinding(1, samplerBindingResource);
+    
+    WGPUBindingResource textureBindingResource;
+    textureBindingResource.tag = WGPUBindingResource_Tag.TextureView;
+    textureBindingResource.texture_view = WGPUBindingResource_WGPUTextureView_Body(textureView);
+    WGPUBindGroupBinding textureBinding = WGPUBindGroupBinding(2, textureBindingResource);
+    
+    WGPUBindGroupBinding[] groupBindings = 
+    [
+        uniformsBinding, samplerBinding, textureBinding
+    ];
+    WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor(uniformsBindGroupLayout, groupBindings.ptr, groupBindings.length);
     WGPUBindGroupId bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
 
     // Pipeline
@@ -209,8 +304,7 @@ void main()
     WGPUShaderModuleDescriptor fsDescriptor = WGPUShaderModuleDescriptor(WGPUU32Array(fs.ptr, fs.length));
     WGPUShaderModuleId fragmentShader = wgpu_device_create_shader_module(device, &fsDescriptor);
 
-    WGPUBindGroupLayoutId[1] bindGroupLayouts = [bindGroupLayout];
-    WGPUPipelineLayoutDescriptor pipelineLayoutDescriptor = WGPUPipelineLayoutDescriptor(bindGroupLayouts.ptr, bindGroupLayouts.length);
+    WGPUPipelineLayoutDescriptor pipelineLayoutDescriptor = WGPUPipelineLayoutDescriptor(&uniformsBindGroupLayout, 1);
     WGPUPipelineLayoutId pipelineLayout = wgpu_device_create_pipeline_layout(device, &pipelineLayoutDescriptor);
 
     WGPUProgrammableStageDescriptor vsStageDescriptor =
@@ -252,19 +346,28 @@ void main()
         write_mask: WGPUColorWrite_ALL
     };
 
-    WGPUVertexAttributeDescriptor attribute =
+    WGPUVertexAttributeDescriptor attributeVertex =
     {
         offset: 0,
         format: WGPUVertexFormat.Float3,
         shader_location: 0
     };
-
+    WGPUVertexAttributeDescriptor attributeTexcoord =
+    {
+        offset: float.sizeof * 3,
+        format: WGPUVertexFormat.Float2,
+        shader_location: 1
+    };
+    WGPUVertexAttributeDescriptor[] attributes =
+    [
+        attributeVertex, attributeTexcoord
+    ];
     WGPUVertexBufferDescriptor vertexBufferDescriptor =
     {
-        stride: float.sizeof * 3,
+        stride: float.sizeof * 5,
         step_mode: WGPUInputStepMode.Vertex,
-        attributes: &attribute,
-        attributes_length: 1
+        attributes: attributes.ptr,
+        attributes_length: attributes.length
     };
 
     WGPUDepthStencilStateDescriptor depthStencilStateDecsriptor =
@@ -308,7 +411,6 @@ void main()
         },
         sample_count: 1
     };
-
     WGPURenderPipelineId renderPipeline = wgpu_device_create_render_pipeline(device, &renderPipelineDescriptor);
 
     // Swapchain
@@ -445,7 +547,7 @@ void main()
         uniforms.modelViewMatrix =
             translationMatrix(Vector3f(0.0f, 0.0f, -5.0f)) *
             rotationMatrix(Axis.y, degtorad(angle)) *
-            scaleMatrix(Vector3f(1.0f, 1.0f, 1.0f));
+            scaleMatrix(Vector3f(2.0f, 2.0f, 2.0f));
 
         WGPURenderPassDescriptor renderPassDescriptor =
         {
@@ -462,9 +564,8 @@ void main()
         wgpu_render_pass_set_vertex_buffers(pass, 0, &vertexBuffer, &offset, 1);
         wgpu_render_pass_set_index_buffer(pass, indexBuffer, 0);
 
-        wgpu_render_pass_draw_indexed(pass, cast(uint)indices.length, 1, 0, 0, 0);
+        wgpu_render_pass_draw_indexed(pass, cast(uint)(indices.length), 1, 0, 0, 0);
 
-        WGPUQueueId queue = wgpu_device_get_queue(device);
         wgpu_render_pass_end_pass(pass);
 
         WGPUCommandBufferId cmdBuf = wgpu_command_encoder_finish(cmdEncoder, null);
@@ -476,3 +577,4 @@ void main()
 
     SDL_Quit();
 }
+
