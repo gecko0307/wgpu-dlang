@@ -48,11 +48,6 @@ void quit(string message)
     core.stdc.stdlib.exit(1);
 }
 
-size_t sizeOf(T)(T[] arr)
-{
-    return arr.length * T.sizeof;
-}
-
 void main()
 {
     auto sdlSupport = loadSDL();
@@ -577,4 +572,3 @@ void main()
 
     SDL_Quit();
 }
-
