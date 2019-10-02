@@ -5,6 +5,7 @@ layout(set = 0, binding = 2) uniform texture2D myTexture;
 
 struct Inputs
 {
+    vec3 eyePosition;
     vec3 color;
     vec2 texcoord;
 };

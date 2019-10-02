@@ -11,6 +11,7 @@ layout(location = 1) in vec2 vaTexcoord;
 
 struct Outputs
 {
+    vec3 eyePosition;
     vec3 color;
     vec2 texcoord;
 };
@@ -26,6 +27,7 @@ void main()
 {
     vec4 eyeVertex = uniforms.modelViewMatrix * vec4(vaVertex, 1.0);
     vec4 clipVertex = uniforms.projectionMatrix * eyeVertex;
+    outputs.eyePosition = eyeVertex.xyz;
     outputs.color = vaVertex * 0.5 + 0.5;
     outputs.texcoord = vaTexcoord;
     gl_Position = clipVertex;
