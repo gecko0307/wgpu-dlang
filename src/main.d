@@ -115,7 +115,7 @@ void main()
         binding: 1,
         visibility: WGPUShaderStage_FRAGMENT,
         ty: WGPUBindingType.Sampler,
-        texture_dimension: WGPUTextureViewDimension.D2,
+        texture_dimension: WGPUTextureViewDimension.D2Array,
         multisampled: false,
         dynamic: false
     };
@@ -124,7 +124,7 @@ void main()
         binding: 2,
         visibility: WGPUShaderStage_FRAGMENT,
         ty: WGPUBindingType.SampledTexture,
-        texture_dimension: WGPUTextureViewDimension.D2,
+        texture_dimension: WGPUTextureViewDimension.D2Array,
         multisampled: false,
         dynamic: false
     };
@@ -198,12 +198,14 @@ void main()
 
     // Texture
     writeln("Texture...");
-    auto img = loadPNG("data/texture.png");
+    auto imgAlbedo = loadPNG("data/albedo.png");
+    auto imgNormal = loadPNG("data/normal.png");
+    auto imgHeight = loadPNG("data/height.png");
 
     WGPUTextureDescriptor textureDescriptor =
     {
-        size: WGPUExtent3d(img.width, img.height, 1),
-        array_layer_count: 1,
+        size: WGPUExtent3d(imgAlbedo.width, imgAlbedo.height, 1),
+        array_layer_count: 3,
         mip_level_count: 1,
         sample_count: 1,
         dimension: WGPUTextureDimension.D2,
@@ -215,42 +217,50 @@ void main()
     WGPUTextureViewDescriptor textureViewDescriptor =
     {
         format: WGPUTextureFormat.Rgba8Unorm,
-        dimension: WGPUTextureViewDimension.D2,
+        dimension: WGPUTextureViewDimension.D2Array,
         aspect: WGPUTextureAspect.All,
         base_mip_level: 0,
         level_count: 1,
         base_array_layer: 0,
-        array_layer_count: 1
+        array_layer_count: 3
     };
     WGPUTextureViewId textureView = wgpu_texture_create_view(texture, &textureViewDescriptor);
 
-    size_t texBufferSize = img.data.length;
-    WGPUBufferDescriptor texBufferDescriptor = WGPUBufferDescriptor(texBufferSize,
-        WGPUBufferUsage_STORAGE | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE | WGPUBufferUsage_COPY_SRC);
-    ubyte* texBufferMem;
-    WGPUBufferId textureBuffer = wgpu_device_create_buffer_mapped(device, &texBufferDescriptor, &texBufferMem);
-    memcpy(texBufferMem, img.data.ptr, texBufferSize);
-    wgpu_buffer_unmap(textureBuffer);
 
-    WGPUCommandEncoderDescriptor texCopyDescriptor = WGPUCommandEncoderDescriptor(0);
-    WGPUCommandEncoderId texCopyCmdEncoder = wgpu_device_create_command_encoder(device, &texCopyDescriptor);
-    WGPUBufferCopyView srcBufferCopyView =
+    void imageToTexture(SuperImage img, WGPUTextureId texture, uint arrayLayer)
     {
-        buffer: textureBuffer,
-        offset: 0,
-        row_pitch: img.width * 4,
-        image_height: img.height
-    };
-    WGPUTextureCopyView dstTextureCopyView =
-    {
-        texture: texture,
-        mip_level: 0,
-        array_layer: 0,
-        origin: WGPUOrigin3d(0.0f, 0.0f, 0.0f)
-    };
-    wgpu_command_encoder_copy_buffer_to_texture(texCopyCmdEncoder, &srcBufferCopyView, &dstTextureCopyView, WGPUExtent3d(img.width, img.height, 1));
-    WGPUCommandBufferId texCopyCmdBuf = wgpu_command_encoder_finish(texCopyCmdEncoder, null);
-    wgpu_queue_submit(queue, &texCopyCmdBuf, 1);
+        size_t texBufferSize = img.data.length;
+        WGPUBufferDescriptor texBufferDescriptor = WGPUBufferDescriptor(texBufferSize,
+            WGPUBufferUsage_STORAGE | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE | WGPUBufferUsage_COPY_SRC);
+        ubyte* texBufferMem;
+        WGPUBufferId textureBuffer = wgpu_device_create_buffer_mapped(device, &texBufferDescriptor, &texBufferMem);
+        memcpy(texBufferMem, img.data.ptr, texBufferSize);
+        wgpu_buffer_unmap(textureBuffer);
+
+        WGPUCommandEncoderDescriptor texCopyDescriptor = WGPUCommandEncoderDescriptor(0);
+        WGPUCommandEncoderId texCopyCmdEncoder = wgpu_device_create_command_encoder(device, &texCopyDescriptor);
+        WGPUBufferCopyView srcBufferCopyView =
+        {
+            buffer: textureBuffer,
+            offset: 0,
+            row_pitch: img.width * 4,
+            image_height: img.height
+        };
+        WGPUTextureCopyView dstTextureCopyView =
+        {
+            texture: texture,
+            mip_level: 0,
+            array_layer: arrayLayer,
+            origin: WGPUOrigin3d(0.0f, 0.0f, 0.0f)
+        };
+        wgpu_command_encoder_copy_buffer_to_texture(texCopyCmdEncoder, &srcBufferCopyView, &dstTextureCopyView, WGPUExtent3d(img.width, img.height, 1));
+        WGPUCommandBufferId texCopyCmdBuf = wgpu_command_encoder_finish(texCopyCmdEncoder, null);
+        wgpu_queue_submit(queue, &texCopyCmdBuf, 1);
+    }
+    
+    imageToTexture(imgAlbedo, texture, 0);
+    imageToTexture(imgNormal, texture, 1);
+    imageToTexture(imgHeight, texture, 2);
 
     // Sampler
     writeln("Sampler...");
