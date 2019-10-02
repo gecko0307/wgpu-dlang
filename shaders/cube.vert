@@ -3,16 +3,18 @@
 layout(set = 0, binding = 0) uniform Uniforms
 {
     mat4 modelViewMatrix;
+    mat4 normalMatrix;
     mat4 projectionMatrix;
 } uniforms;
 
 layout(location = 0) in vec3 vaVertex;
 layout(location = 1) in vec2 vaTexcoord;
+layout(location = 2) in vec3 vaNormal;
 
 struct Outputs
 {
     vec3 eyePosition;
-    vec3 color;
+    vec3 eyeNormal;
     vec2 texcoord;
 };
 
@@ -28,7 +30,7 @@ void main()
     vec4 eyeVertex = uniforms.modelViewMatrix * vec4(vaVertex, 1.0);
     vec4 clipVertex = uniforms.projectionMatrix * eyeVertex;
     outputs.eyePosition = eyeVertex.xyz;
-    outputs.color = vaVertex * 0.5 + 0.5;
+    outputs.eyeNormal = (uniforms.normalMatrix * vec4(vaNormal, 0.0)).xyz;
     outputs.texcoord = vaTexcoord;
     gl_Position = clipVertex;
 }

@@ -140,12 +140,35 @@ void main()
     writeln("Vertex buffer...");
 
     float[] vertices = [
-        0.5f, 0.5f, 0.5f, 1, 0,  -0.5f, 0.5f, 0.5f, 0, 0,  -0.5f,-0.5f, 0.5f, 0, 1,  0.5f,-0.5f, 0.5f, 1, 1, // v0,v1,v2,v3 (front)
-        0.5f, 0.5f, 0.5f, 0, 0,   0.5f,-0.5f, 0.5f, 0, 1,   0.5f,-0.5f,-0.5f, 1, 1,  0.5f, 0.5f,-0.5f, 1, 0, // v0,v3,v4,v5 (right)
-        0.5f, 0.5f, 0.5f, 1, 1,   0.5f, 0.5f,-0.5f, 1, 0,  -0.5f, 0.5f,-0.5f, 0, 0, -0.5f, 0.5f, 0.5f, 0, 1, // v0,v5,v6,v1 (top)
-       -0.5f, 0.5f, 0.5f, 1, 0,  -0.5f, 0.5f,-0.5f, 0, 0,  -0.5f,-0.5f,-0.5f, 0, 1, -0.5f,-0.5f, 0.5f, 1, 1, // v1,v6,v7,v2 (left)
-       -0.5f,-0.5f,-0.5f, 0, 1,   0.5f,-0.5f,-0.5f, 1, 1,   0.5f,-0.5f, 0.5f, 1, 0, -0.5f,-0.5f, 0.5f, 0, 0, // v7,v4,v3,v2 (bottom)
-        0.5f,-0.5f,-0.5f, 0, 1,  -0.5f,-0.5f,-0.5f, 1, 1,  -0.5f, 0.5f,-0.5f, 1, 0,  0.5f, 0.5f,-0.5f, 0, 0  // v4,v7,v6,v5 (back)
+        0.5f, 0.5f, 0.5f, 1, 0, 0, 0, 1,
+       -0.5f, 0.5f, 0.5f, 0, 0, 0, 0, 1,
+       -0.5f,-0.5f, 0.5f, 0, 1, 0, 0, 1,
+        0.5f,-0.5f, 0.5f, 1, 1, 0, 0, 1, // v0,v1,v2,v3 (front)
+
+        0.5f, 0.5f, 0.5f, 0, 0, 1, 0, 0,
+        0.5f,-0.5f, 0.5f, 0, 1, 1, 0, 0,
+        0.5f,-0.5f,-0.5f, 1, 1, 1, 0, 0,
+        0.5f, 0.5f,-0.5f, 1, 0, 1, 0, 0, // v0,v3,v4,v5 (right)
+
+        0.5f, 0.5f, 0.5f, 1, 1, 0, 1, 0,
+        0.5f, 0.5f,-0.5f, 1, 0, 0, 1, 0,
+       -0.5f, 0.5f,-0.5f, 0, 0, 0, 1, 0,
+       -0.5f, 0.5f, 0.5f, 0, 1, 0, 1, 0, // v0,v5,v6,v1 (top)
+
+       -0.5f, 0.5f, 0.5f, 1, 0, -1, 0, 0,
+       -0.5f, 0.5f,-0.5f, 0, 0, -1, 0, 0,
+       -0.5f,-0.5f,-0.5f, 0, 1, -1, 0, 0,
+       -0.5f,-0.5f, 0.5f, 1, 1, -1, 0, 0, // v1,v6,v7,v2 (left)
+
+       -0.5f,-0.5f,-0.5f, 0, 1, 0, -1, 0,
+        0.5f,-0.5f,-0.5f, 1, 1, 0, -1, 0,
+        0.5f,-0.5f, 0.5f, 1, 0, 0, -1, 0,
+       -0.5f,-0.5f, 0.5f, 0, 0, 0, -1, 0, // v7,v4,v3,v2 (bottom)
+
+        0.5f,-0.5f,-0.5f, 0, 1, 0, 0, -1,
+       -0.5f,-0.5f,-0.5f, 1, 1, 0, 0, -1,
+       -0.5f, 0.5f,-0.5f, 1, 0, 0, 0, -1,
+        0.5f, 0.5f,-0.5f, 0, 0, 0, 0, -1  // v4,v7,v6,v5 (back)
     ];
 
     ushort[] indices = [
@@ -250,6 +273,7 @@ void main()
     struct Uniforms
     {
         Matrix4x4f modelViewMatrix;
+        Matrix4x4f normalMatrix;
         Matrix4x4f projectionMatrix;
     }
 
@@ -259,6 +283,7 @@ void main()
     Uniforms uniforms =
     {
         modelViewMatrix: Matrix4x4f.identity,
+        normalMatrix: Matrix4x4f.identity,
         projectionMatrix: perspectiveMatrix(fov, aspectRatio, 0.01f, 1000.0f)
     };
 
@@ -353,6 +378,10 @@ void main()
         write_mask: WGPUColorWrite_ALL
     };
 
+    size_t vertexSize = float.sizeof * 3;
+    size_t texcoordSize = float.sizeof * 2;
+    size_t normalSize = float.sizeof * 3;
+
     WGPUVertexAttributeDescriptor attributeVertex =
     {
         offset: 0,
@@ -362,18 +391,25 @@ void main()
 
     WGPUVertexAttributeDescriptor attributeTexcoord =
     {
-        offset: float.sizeof * 3,
+        offset: vertexSize,
         format: WGPUVertexFormat.Float2,
         shader_location: 1
     };
 
+    WGPUVertexAttributeDescriptor attributeNormal =
+    {
+        offset: vertexSize + texcoordSize,
+        format: WGPUVertexFormat.Float3,
+        shader_location: 2
+    };
+
     WGPUVertexAttributeDescriptor[] attributes =
     [
-        attributeVertex, attributeTexcoord
+        attributeVertex, attributeTexcoord, attributeNormal
     ];
     WGPUVertexBufferDescriptor vertexBufferDescriptor =
     {
-        stride: float.sizeof * 5,
+        stride: vertexSize + texcoordSize + normalSize,
         step_mode: WGPUInputStepMode.Vertex,
         attributes: attributes.ptr,
         attributes_length: attributes.length
@@ -536,6 +572,7 @@ void main()
             rotationMatrix(Axis.x, degtorad(angle)) *
             rotationMatrix(Axis.y, degtorad(angle)) *
             scaleMatrix(Vector3f(2.0f, 2.0f, 2.0f));
+        uniforms.normalMatrix = uniforms.modelViewMatrix.inverse.transposed;
 
         nextTexture = wgpu_swap_chain_get_next_texture(swapchain);
         colorAttachment.attachment = nextTexture.view_id;
