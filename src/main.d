@@ -292,11 +292,11 @@ void main()
     textureBindingResource.texture_view = WGPUBindingResource_WGPUTextureView_Body(textureView);
     WGPUBindGroupBinding textureBinding = WGPUBindGroupBinding(2, textureBindingResource);
 
-    WGPUBindGroupBinding[] groupBindings =
+    WGPUBindGroupBinding[] uniformBindGroupBindings =
     [
         uniformsBinding, samplerBinding, textureBinding
     ];
-    WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor(uniformsBindGroupLayout, groupBindings.ptr, groupBindings.length);
+    WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor(uniformsBindGroupLayout, uniformBindGroupBindings.ptr, uniformBindGroupBindings.length);
     WGPUBindGroupId bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
 
     // Pipeline
