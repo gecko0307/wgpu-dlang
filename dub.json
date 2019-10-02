@@ -8,8 +8,8 @@
     ],
     
     "dependencies": {
-        "bindbc-loader": "~>0.2.1",
         "bindbc-sdl": "~>0.8.0",
+        "bindbc-wgpu": "~>0.1.0-alpha1",
         "dlib": "~>0.16.0"
     },
     
