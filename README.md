@@ -1,6 +1,8 @@
 # wgpu-dlang
 [wgpu](https://github.com/gfx-rs/wgpu) binding for D with a cube rendering demo. Uses SDL2 for window creation and [glslangValidator](https://github.com/KhronosGroup/glslang) to compile shaders.
 
+[![Screenshot](screenshot.jpg)](screenshot.jpg)
+
 ## What is WebGPU?
 It is a new low-level graphics and compute API for the Web that works on top of Vulkan, DirectX 12, or Metal. It exposes the generic computational facilities available in today's GPUs in a cross-platform way.
 
