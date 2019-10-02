@@ -249,7 +249,6 @@ void main()
     writeln("Uniforms...");
     struct Uniforms
     {
-        Color4f color;
         Matrix4x4f modelViewMatrix;
         Matrix4x4f projectionMatrix;
     }
@@ -259,13 +258,11 @@ void main()
 
     Uniforms uniforms =
     {
-        color: Color4f(1.0f, 0.5f, 0.0f, 0.0f),
         modelViewMatrix: Matrix4x4f.identity,
         projectionMatrix: perspectiveMatrix(fov, aspectRatio, 0.01f, 1000.0f)
     };
 
     float angle = 0.0f;
-    float forward = 1.0f;
 
     size_t uniformsSize = uniforms.sizeof;
 
@@ -532,21 +529,19 @@ void main()
             }
         }
 
+        // Update uniforms
+        angle += 1.0f;
+        uniforms.modelViewMatrix =
+            translationMatrix(Vector3f(0.0f, 0.0f, -5.0f)) *
+            rotationMatrix(Axis.y, degtorad(angle)) *
+            scaleMatrix(Vector3f(3.0f, 3.0f, 3.0f));
+
         nextTexture = wgpu_swap_chain_get_next_texture(swapchain);
         colorAttachment.attachment = nextTexture.view_id;
 
         WGPUCommandEncoderDescriptor commandEncDescriptor = WGPUCommandEncoderDescriptor(0);
         WGPUCommandEncoderId cmdEncoder = wgpu_device_create_command_encoder(device, &commandEncDescriptor);
 
-        uniforms.color.b += forward * 0.01f;
-        if (forward > 0.0f)
-        {
-            if (uniforms.color.b > 1.0f) { forward = -1; }
-        }
-        else
-        {
-            if (uniforms.color.b < 0.0f) { forward = 1; }
-        }
         WGPUBufferId uniformBufferTmp;
         {
             ubyte* bufferMem;
@@ -555,12 +550,6 @@ void main()
             wgpu_buffer_unmap(uniformBufferTmp);
             wgpu_command_encoder_copy_buffer_to_buffer(cmdEncoder, uniformBufferTmp, 0, uniformBuffer, 0, uniformsSize);
         }
-
-        angle += 1.0f;
-        uniforms.modelViewMatrix =
-            translationMatrix(Vector3f(0.0f, 0.0f, -5.0f)) *
-            rotationMatrix(Axis.y, degtorad(angle)) *
-            scaleMatrix(Vector3f(3.0f, 3.0f, 3.0f));
 
         WGPURenderPassDescriptor renderPassDescriptor =
         {

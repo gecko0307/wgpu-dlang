@@ -2,7 +2,6 @@
 
 layout(set = 0, binding = 0) uniform Uniforms
 {
-    vec4 color;
     mat4 modelViewMatrix;
     mat4 projectionMatrix;
 } uniforms;
