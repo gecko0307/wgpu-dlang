@@ -9,11 +9,13 @@ layout(set = 0, binding = 0) uniform Uniforms
 layout(set = 0, binding = 1) uniform sampler mySampler;
 layout(set = 0, binding = 2) uniform texture2D myTexture;
 
-layout(location = 0) in Inputs
+struct Inputs
 {
     vec3 color;
     vec2 texcoord;
-} inputs;
+};
+
+layout(location = 0) in Inputs inputs;
 
 layout(location = 0) out vec4 outColor;
 

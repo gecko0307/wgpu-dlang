@@ -10,11 +10,13 @@ layout(set = 0, binding = 0) uniform Uniforms
 layout(location = 0) in vec3 vaVertex;
 layout(location = 1) in vec2 vaTexcoord;
 
-layout(location = 0) out Outputs
+struct Outputs
 {
     vec3 color;
     vec2 texcoord;
-} outputs;
+};
+
+layout(location = 0) out Outputs outputs;
 
 out gl_PerVertex
 {

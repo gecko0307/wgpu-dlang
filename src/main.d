@@ -56,6 +56,12 @@ void main()
     auto wgpuSupport = loadWGPU();
     writeln("wgpuSupport: ", wgpuSupport);
 
+    if (sdlSupport == SDLSupport.noLibrary)
+        quit("Error: SDL is not installed");
+
+    if (wgpuSupport == WGPUSupport.noLibrary)
+        quit("Error: WGPU is not installed");
+
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
         quit("Error: failed to init SDL: " ~ to!string(SDL_GetError()));
 
@@ -71,6 +77,7 @@ void main()
     auto hwnd = winInfo.info.win.window;
     auto hinstance = winInfo.info.win.hinstance;
 
+    writeln("Device...");
     WGPURequestAdapterOptions reqAdaptersOptions =
     {
         power_preference: WGPUPowerPreference.HighPerformance,
@@ -90,9 +97,10 @@ void main()
         }
     };
     WGPUDeviceId device = wgpu_adapter_request_device(adapter, &deviceDescriptor);
-    
+
     WGPUQueueId queue = wgpu_device_get_queue(device);
 
+    writeln("Bind group layout...");
     WGPUBindGroupLayoutBinding layoutBindingUniforms =
     {
         binding: 0,
@@ -102,7 +110,7 @@ void main()
         multisampled: false,
         dynamic: false
     };
-    WGPUBindGroupLayoutBinding layoutBindingSamplers =
+    WGPUBindGroupLayoutBinding layoutBindingSampler =
     {
         binding: 1,
         visibility: WGPUShaderStage_FRAGMENT,
@@ -111,7 +119,7 @@ void main()
         multisampled: false,
         dynamic: false
     };
-    WGPUBindGroupLayoutBinding layoutBindingTextures =
+    WGPUBindGroupLayoutBinding layoutBindingTexture =
     {
         binding: 2,
         visibility: WGPUShaderStage_FRAGMENT,
@@ -120,14 +128,17 @@ void main()
         multisampled: false,
         dynamic: false
     };
-    WGPUBindGroupLayoutBinding[] bindGroupLayoutBindings = 
+
+    WGPUBindGroupLayoutBinding[] bindGroupLayoutBindings =
     [
-        layoutBindingUniforms, layoutBindingSamplers, layoutBindingTextures
+        layoutBindingUniforms, layoutBindingSampler, layoutBindingTexture
     ];
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor(bindGroupLayoutBindings.ptr, bindGroupLayoutBindings.length);
     WGPUBindGroupLayoutId uniformsBindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
 
     // Vertex buffer
+    writeln("Vertex buffer...");
+
     float[] vertices = [
         0.5f, 0.5f, 0.5f, 1, 0,  -0.5f, 0.5f, 0.5f, 0, 0,  -0.5f,-0.5f, 0.5f, 0, 1,  0.5f,-0.5f, 0.5f, 1, 1, // v0,v1,v2,v3 (front)
         0.5f, 0.5f, 0.5f, 0, 0,   0.5f,-0.5f, 0.5f, 0, 1,   0.5f,-0.5f,-0.5f, 1, 1,  0.5f, 0.5f,-0.5f, 1, 0, // v0,v3,v4,v5 (right)
@@ -145,7 +156,7 @@ void main()
         16,17,18,  18,19,16,    // v7-v4-v3, v3-v2-v7 (bottom)
         20,21,22,  22,23,20     // v4-v7-v6, v6-v5-v4 (back)
     ];
-    
+
     size_t verticesSize = vertices.length * float.sizeof;
     WGPUBufferDescriptor verticesBufferDescriptor = WGPUBufferDescriptor(verticesSize,
         WGPUBufferUsage_VERTEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
@@ -161,10 +172,11 @@ void main()
     WGPUBufferId indexBuffer = wgpu_device_create_buffer_mapped(device, &indicesBufferDescriptor, &indexBufferMem);
     memcpy(indexBufferMem, indices.ptr, indicesSize);
     wgpu_buffer_unmap(indexBuffer);
-    
+
     // Texture
+    writeln("Texture...");
     auto img = loadPNG("data/texture.png");
-    
+
     WGPUTextureDescriptor textureDescriptor =
     {
         size: WGPUExtent3d(img.width, img.height, 1),
@@ -188,19 +200,18 @@ void main()
         array_layer_count: 1
     };
     WGPUTextureViewId textureView = wgpu_texture_create_view(texture, &textureViewDescriptor);
-    
+
     size_t texBufferSize = img.data.length;
-    writeln(texBufferSize);
     WGPUBufferDescriptor texBufferDescriptor = WGPUBufferDescriptor(texBufferSize,
         WGPUBufferUsage_STORAGE | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE | WGPUBufferUsage_COPY_SRC);
     ubyte* texBufferMem;
     WGPUBufferId textureBuffer = wgpu_device_create_buffer_mapped(device, &texBufferDescriptor, &texBufferMem);
     memcpy(texBufferMem, img.data.ptr, texBufferSize);
     wgpu_buffer_unmap(textureBuffer);
-    
+
     WGPUCommandEncoderDescriptor texCopyDescriptor = WGPUCommandEncoderDescriptor(0);
     WGPUCommandEncoderId texCopyCmdEncoder = wgpu_device_create_command_encoder(device, &texCopyDescriptor);
-    WGPUBufferCopyView srcBufferCopyView = 
+    WGPUBufferCopyView srcBufferCopyView =
     {
         buffer: textureBuffer,
         offset: 0,
@@ -217,9 +228,10 @@ void main()
     wgpu_command_encoder_copy_buffer_to_texture(texCopyCmdEncoder, &srcBufferCopyView, &dstTextureCopyView, WGPUExtent3d(img.width, img.height, 1));
     WGPUCommandBufferId texCopyCmdBuf = wgpu_command_encoder_finish(texCopyCmdEncoder, null);
     wgpu_queue_submit(queue, &texCopyCmdBuf, 1);
-    
+
     // Sampler
-    WGPUSamplerDescriptor samplerDescriptor = 
+    writeln("Sampler...");
+    WGPUSamplerDescriptor samplerDescriptor =
     {
         address_mode_u: WGPUAddressMode.Repeat,
         address_mode_v: WGPUAddressMode.Repeat,
@@ -234,6 +246,7 @@ void main()
     WGPUSamplerId sampler = wgpu_device_create_sampler(device, &samplerDescriptor);
 
     // Uniform buffer
+    writeln("Uniforms...");
     struct Uniforms
     {
         Color4f color;
@@ -266,23 +279,23 @@ void main()
     WGPUBufferId uniformBuffer = wgpu_device_create_buffer(device, &bufferDescriptor);
 
     auto bufBinding = WGPUBufferBinding(uniformBuffer, 0, uniformsSize);
-    
+
     WGPUBindingResource bufBindingResource;
     bufBindingResource.tag = WGPUBindingResource_Tag.Buffer;
     bufBindingResource.buffer = WGPUBindingResource_WGPUBuffer_Body(bufBinding);
     WGPUBindGroupBinding uniformsBinding = WGPUBindGroupBinding(0, bufBindingResource);
-    
+
     WGPUBindingResource samplerBindingResource;
     samplerBindingResource.tag = WGPUBindingResource_Tag.Sampler;
     samplerBindingResource.sampler = WGPUBindingResource_WGPUSampler_Body(sampler);
     WGPUBindGroupBinding samplerBinding = WGPUBindGroupBinding(1, samplerBindingResource);
-    
+
     WGPUBindingResource textureBindingResource;
     textureBindingResource.tag = WGPUBindingResource_Tag.TextureView;
     textureBindingResource.texture_view = WGPUBindingResource_WGPUTextureView_Body(textureView);
     WGPUBindGroupBinding textureBinding = WGPUBindGroupBinding(2, textureBindingResource);
-    
-    WGPUBindGroupBinding[] groupBindings = 
+
+    WGPUBindGroupBinding[] groupBindings =
     [
         uniformsBinding, samplerBinding, textureBinding
     ];
@@ -290,6 +303,7 @@ void main()
     WGPUBindGroupId bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
 
     // Pipeline
+    writeln("Shaders...");
     uint[] vs = cast(uint[])std.file.read("shaders/cube.vert.spv");
     uint[] fs = cast(uint[])std.file.read("shaders/cube.frag.spv");
 
@@ -314,6 +328,7 @@ void main()
         entry_point: "main".ptr
     };
 
+    writeln("Pipeline...");
     WGPURasterizationStateDescriptor rastStateDescriptor =
     {
         front_face: WGPUFrontFace.Ccw,
@@ -347,12 +362,14 @@ void main()
         format: WGPUVertexFormat.Float3,
         shader_location: 0
     };
+
     WGPUVertexAttributeDescriptor attributeTexcoord =
     {
         offset: float.sizeof * 3,
         format: WGPUVertexFormat.Float2,
         shader_location: 1
     };
+
     WGPUVertexAttributeDescriptor[] attributes =
     [
         attributeVertex, attributeTexcoord
@@ -409,6 +426,7 @@ void main()
     WGPURenderPipelineId renderPipeline = wgpu_device_create_render_pipeline(device, &renderPipelineDescriptor);
 
     // Swapchain
+    writeln("Swapchain...");
     WGPUSurfaceId surface = wgpu_create_surface_from_windows_hwnd(hinstance, hwnd);
 
     WGPUSwapChainId createSwapchain(uint w, uint h)
@@ -449,7 +467,7 @@ void main()
             writeln("wgpu_texture_destroy(depthTexture)");
             wgpu_texture_destroy(depthTexture);
         }
-        
+
         WGPUTextureDescriptor depthTextureDescriptor =
         {
             size: WGPUExtent3d(w, h, 1),
@@ -484,10 +502,10 @@ void main()
             stencil_store_op: WGPUStoreOp.Store,
             clear_stencil: 0
         };
-        
+
         return depthStencilAttachment;
     }
-    
+
     auto depthStencilAttachment = createDepthTexture(windowWidth, windowHeight);
 
     // Main loop
