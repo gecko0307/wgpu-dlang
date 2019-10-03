@@ -257,7 +257,7 @@ void main()
         WGPUCommandBufferId texCopyCmdBuf = wgpu_command_encoder_finish(texCopyCmdEncoder, null);
         wgpu_queue_submit(queue, &texCopyCmdBuf, 1);
     }
-    
+
     imageToTexture(imgAlbedo, texture, 0);
     imageToTexture(imgNormal, texture, 1);
     imageToTexture(imgHeight, texture, 2);
@@ -610,7 +610,7 @@ void main()
         wgpu_render_pass_set_pipeline(pass, renderPipeline);
         wgpu_render_pass_set_bind_group(pass, 0, bindGroup, null, 0);
 
-        size_t offset = 0;
+        WGPUBufferAddress offset = 0;
         wgpu_render_pass_set_vertex_buffers(pass, 0, &vertexBuffer, &offset, 1);
         wgpu_render_pass_set_index_buffer(pass, indexBuffer, 0);
 
