@@ -38,7 +38,7 @@
     "copyFiles-windows-x86": ["lib/x86/*.dll"],
     "copyFiles-windows-x86_64": ["lib/x64/*.dll"],
     
-    "postBuildCommands": [
+    "preGenerateCommands": [
         "glslangValidator shaders/cube.vert -V -o shaders/cube.vert.spv",
         "glslangValidator shaders/cube.frag -V -o shaders/cube.frag.spv"
     ]
