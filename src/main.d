@@ -336,8 +336,8 @@ void main()
 
     // Pipeline
     writeln("Shaders...");
-    uint[] vs = cast(uint[])std.file.read("shaders/cube.vert.spv");
-    uint[] fs = cast(uint[])std.file.read("shaders/cube.frag.spv");
+    uint[] vs = cast(uint[])std.file.read("data/shaders/cube.vert.spv");
+    uint[] fs = cast(uint[])std.file.read("data/shaders/cube.frag.spv");
 
     WGPUShaderModuleDescriptor vsDescriptor = WGPUShaderModuleDescriptor(WGPUU32Array(vs.ptr, vs.length));
     WGPUShaderModuleId vertexShader = wgpu_device_create_shader_module(device, &vsDescriptor);

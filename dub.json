@@ -35,11 +35,11 @@
         }
     ],
     
-    "copyFiles-windows-x86": ["lib/x86/*.dll"],
-    "copyFiles-windows-x86_64": ["lib/x64/*.dll"],
+    "preGenerateCommands-posix": ["./compileShaders.sh"],
+    "preGenerateCommands-windows-x86": ["compileShaders_x86.bat"],
+    "preGenerateCommands-windows-x86_64": ["compileShaders_x64.bat"],
     
-    "preGenerateCommands-posix":  [ "./compileShaders.sh" ],
-    "preGenerateCommands-windows-x86": [ "compileShaders_x86.bat" ],
-    "preGenerateCommands-windows-x86_64": [ "compileShaders_x64.bat" ]
+    "copyFiles-windows-x86": ["lib/x86/*.dll"],
+    "copyFiles-windows-x86_64": ["lib/x64/*.dll"]
 }
 
