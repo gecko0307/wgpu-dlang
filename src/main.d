@@ -48,6 +48,11 @@ void quit(string message)
     core.stdc.stdlib.exit(1);
 }
 
+extern(C) void requestAdapterCallback(WGPUAdapterId adapter, void* userdata)
+{
+    *cast(WGPUAdapterId*)userdata = adapter;
+}
+
 void main()
 {
     auto sdlSupport = loadSDL();
@@ -77,14 +82,16 @@ void main()
     auto hwnd = winInfo.info.win.window;
     auto hinstance = winInfo.info.win.hinstance;
 
-    writeln("Device...");
+    writeln("Adapter...");
     WGPURequestAdapterOptions reqAdaptersOptions =
     {
-        power_preference: WGPUPowerPreference.HighPerformance,
-        backends: 2 | 4 | 8
+        power_preference: WGPUPowerPreference.HighPerformance
     };
-    WGPUAdapterId adapter = wgpu_request_adapter(&reqAdaptersOptions);
+    WGPUAdapterId adapter;
+    wgpu_request_adapter_async(&reqAdaptersOptions, 2 | 4 | 8, &requestAdapterCallback, &adapter);
+    writeln("OK");
 
+    writeln("Device...");
     WGPUDeviceDescriptor deviceDescriptor =
     {
         extensions:
@@ -97,6 +104,7 @@ void main()
         }
     };
     WGPUDeviceId device = wgpu_adapter_request_device(adapter, &deviceDescriptor);
+    writeln("OK");
 
     WGPUQueueId queue = wgpu_device_get_queue(device);
 
@@ -135,6 +143,7 @@ void main()
     ];
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor(bindGroupLayoutBindings.ptr, bindGroupLayoutBindings.length);
     WGPUBindGroupLayoutId uniformsBindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
+    writeln("OK");
 
     // Vertex buffer
     writeln("Vertex buffer...");
@@ -195,9 +204,11 @@ void main()
     WGPUBufferId indexBuffer = wgpu_device_create_buffer_mapped(device, &indicesBufferDescriptor, &indexBufferMem);
     memcpy(indexBufferMem, indices.ptr, indicesSize);
     wgpu_buffer_unmap(indexBuffer);
+    
+    writeln("OK");
 
     // Texture
-    writeln("Texture...");
+    writeln("Textures...");
     auto imgAlbedo = loadPNG("data/albedo.png");
     auto imgNormal = loadPNG("data/normal.png");
     auto imgHeight = loadPNG("data/height.png");
@@ -261,9 +272,11 @@ void main()
     imageToTexture(imgAlbedo, texture, 0);
     imageToTexture(imgNormal, texture, 1);
     imageToTexture(imgHeight, texture, 2);
+    
+    writeln("OK");
 
     // Sampler
-    writeln("Sampler...");
+    writeln("Samplers...");
     WGPUSamplerDescriptor samplerDescriptor =
     {
         address_mode_u: WGPUAddressMode.Repeat,
@@ -277,6 +290,8 @@ void main()
         compare_function: WGPUCompareFunction.Always
     };
     WGPUSamplerId sampler = wgpu_device_create_sampler(device, &samplerDescriptor);
+    
+    writeln("OK");
 
     // Uniform buffer
     writeln("Uniforms...");
@@ -333,6 +348,8 @@ void main()
     ];
     WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor(uniformsBindGroupLayout, uniformBindGroupBindings.ptr, uniformBindGroupBindings.length);
     WGPUBindGroupId bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
+    
+    writeln("OK");
 
     // Pipeline
     writeln("Shaders...");
@@ -359,6 +376,8 @@ void main()
         _module: fragmentShader,
         entry_point: "main".ptr
     };
+    
+    writeln("OK");
 
     writeln("Pipeline...");
     WGPURasterizationStateDescriptor rastStateDescriptor =
@@ -467,6 +486,8 @@ void main()
         sample_count: 1
     };
     WGPURenderPipelineId renderPipeline = wgpu_device_create_render_pipeline(device, &renderPipelineDescriptor);
+    
+    writeln("OK");
 
     // Swapchain
     writeln("Swapchain...");
@@ -550,8 +571,11 @@ void main()
     }
 
     auto depthStencilAttachment = createDepthTexture(windowWidth, windowHeight);
-
+    
+    writeln("OK");
+    
     // Main loop
+    writeln("Running...");
     bool running = true;
     SDL_Event event;
     while(running)
