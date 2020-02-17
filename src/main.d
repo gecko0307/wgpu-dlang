@@ -262,7 +262,7 @@ void main()
             texture: texture,
             mip_level: 0,
             array_layer: arrayLayer,
-            origin: WGPUOrigin3d(0.0f, 0.0f, 0.0f)
+            origin: WGPUOrigin3d(0, 0, 0)
         };
         wgpu_command_encoder_copy_buffer_to_texture(texCopyCmdEncoder, &srcBufferCopyView, &dstTextureCopyView, WGPUExtent3d(img.width, img.height, 1));
         WGPUCommandBufferId texCopyCmdBuf = wgpu_command_encoder_finish(texCopyCmdEncoder, null);
@@ -556,7 +556,7 @@ void main()
         };
         depthAttachment = wgpu_texture_create_view(depthTexture, &depthTextureViewDescriptor);
 
-        WGPURenderPassDepthStencilAttachmentDescriptor_TextureViewId depthStencilAttachment =
+        WGPURenderPassDepthStencilAttachmentDescriptor depthStencilAttachment =
         {
             attachment: depthAttachment,
             depth_load_op: WGPULoadOp.Clear,
