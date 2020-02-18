@@ -98,8 +98,6 @@ void main()
     mat3 tangentToEye = cotangentFrame(eyeNormalNorm, inputs.eyePosition, inputs.texcoord);
     vec3 viewDirectionTangent = normalize(viewDirection * tangentToEye);
 
-    //float height = texture(sampler2DArray(myTexture, mySampler), vec3(inputs.texcoord, 2)).x;
-    //vec2 shiftedTexcoord = parallaxMapping(viewDirectionTangent, inputs.texcoord, height);
     vec2 shiftedTexcoord = inputs.texcoord;
     vec3 tangentNormal = texture(sampler2DArray(myTexture, mySampler), vec3(shiftedTexcoord, 1)).xyz;
     tangentNormal = normalize(tangentNormal * 2.0 - 1.0);
@@ -110,16 +108,9 @@ void main()
 
     vec3 albedo = toLinear(texture(sampler2DArray(myTexture, mySampler), vec3(shiftedTexcoord, 0)).rgb);
 
-    /*
-    float diffuse = max(dot(eyeNormalNorm, lightEye), 0.2);
-    float specular = blinnPhong(lightEye, viewDirection, eyeNormalNorm, 64.0);
-    const float specularity = 0.5;
-    vec3 radiance = albedo * diffuse + specular * specularity;
-    */
-
     // GGX BRDF
-    const float roughness = 0.3;
-    const float metallic = 0.0;
+    const float roughness = texture(sampler2DArray(myTexture, mySampler), vec3(shiftedTexcoord, 2)).r;
+    const float metallic = texture(sampler2DArray(myTexture, mySampler), vec3(shiftedTexcoord, 3)).r;
     vec3 f0 = mix(vec3(0.04), albedo, metallic);
     float NL = max(dot(eyeNormalNorm, lightEye), 0.0);
     vec3 H = normalize(viewDirection + lightEye);
@@ -128,8 +119,8 @@ void main()
     vec3 F = fresnelRoughness(max(dot(H, viewDirection), 0.0), f0, roughness);
     vec3 kD = (1.0 - F) * (1.0 - metallic);
     vec3 specular = (NDF * G * F) / max(4.0 * max(dot(eyeNormalNorm, viewDirection), 0.0) * NL, 0.001);
-    vec3 radiance = albedo * vec3(0.2) + (kD * albedo * invPI + specular) * NL;
-    
+    vec3 ambient = vec3(0.3);
+    vec3 radiance = albedo * ambient + (kD * albedo * invPI + specular) * NL;
 
     outColor = vec4(toGamma(radiance), 1.0);
 }

@@ -272,12 +272,14 @@ void main()
     writeln("Textures...");
     auto imgAlbedo = loadPNG("data/cerberus-albedo.png");
     auto imgNormal = loadPNG("data/cerberus-normal.png");
+    auto imgRoughness = loadPNG("data/cerberus-roughness.png");
+    auto imgMetallic = loadPNG("data/cerberus-metallic.png");
     //auto imgHeight = loadPNG("data/height.png");
 
     WGPUTextureDescriptor textureDescriptor =
     {
         size: WGPUExtent3d(imgAlbedo.width, imgAlbedo.height, 1),
-        array_layer_count: 2, //3
+        array_layer_count: 4, //3
         mip_level_count: 1,
         sample_count: 1,
         dimension: WGPUTextureDimension.D2,
@@ -294,7 +296,7 @@ void main()
         base_mip_level: 0,
         level_count: 1,
         base_array_layer: 0,
-        array_layer_count: 2 //3
+        array_layer_count: 4 //3
     };
     WGPUTextureViewId textureView = wgpu_texture_create_view(texture, &textureViewDescriptor);
 
@@ -332,7 +334,8 @@ void main()
 
     imageToTexture(imgAlbedo, texture, 0);
     imageToTexture(imgNormal, texture, 1);
-    //imageToTexture(imgHeight, texture, 2);
+    imageToTexture(imgRoughness, texture, 2);
+    imageToTexture(imgMetallic, texture, 3);
 
     writeln("OK");
 
