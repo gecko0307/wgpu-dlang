@@ -81,10 +81,8 @@ void main()
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         windowWidth, windowHeight,
         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    SDL_SysWMinfo winInfo;
-    SDL_GetWindowWMInfo(window, &winInfo);
-    auto hwnd = winInfo.info.win.window;
-    auto hinstance = winInfo.info.win.hinstance;
+    SDL_SysWMinfo wmInfo;
+    SDL_GetWindowWMInfo(window, &wmInfo);
 
     writeln("Adapter...");
     WGPURequestAdapterOptions reqAdaptersOptions =
@@ -556,7 +554,52 @@ void main()
 
     // Swapchain
     writeln("Swapchain...");
-    WGPUSurfaceId surface = wgpu_create_surface_from_windows_hwnd(hinstance, hwnd);
+    WGPUSurfaceId surface;
+    writeln("Subsystem: ", wmInfo.subsystem);
+    version(Windows)
+    {
+        if (wmInfo.subsystem == SDL_SYSWM_WINDOWS)
+        {
+            auto win_hwnd = wmInfo.info.win.window;
+            auto win_hinstance = wmInfo.info.win.hinstance;
+            surface = wgpu_create_surface_from_windows_hwnd(win_hinstance, win_hwnd);
+        }
+        else
+        {
+            quit("Unsupported subsystem, sorry");
+        }
+    }
+    else version(linux)
+    {
+        if (wmInfo.subsystem == SDL_SYSWM_X11)
+        {
+            auto x11_display = wmInfo.info.x11.display;
+            auto x11_window = wmInfo.info.x11.window;
+            surface = wgpu_create_surface_from_xlib(cast(void**)x11_display, x11_window);
+        }
+        else if (wmInfo.subsystem == SDL_SYSWM_WAYLAND)
+        {
+            auto wl_surface = wmInfo.info.wl.surface;
+            auto wl_display = wmInfo.info.wl.display;
+            surface = wgpu_create_surface_from_wayland(wl_surface, wl_display);
+        }
+        else
+        {
+            quit("Unsupported subsystem, sorry");
+        }
+    }
+    else version(OSX)
+    {
+        // Waiting for SDL devs to come up with that...
+        // auto m_layer = ?
+        // surface = wgpu_create_surface_from_metal_layer(m_layer);
+        
+        quit("macOS is not supported");
+    }
+    else
+    {
+        static assert(0, "This operating system is not supported, sorry");
+    }
 
     WGPUSwapChainId createSwapchain(uint w, uint h)
     {
