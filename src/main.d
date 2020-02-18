@@ -41,6 +41,10 @@ import bindbc.wgpu;
 import dlib.core;
 import dlib.image;
 import dlib.math;
+import dlib.geometry;
+import dlib.filesystem;
+
+import mesh;
 
 void quit(string message)
 {
@@ -148,36 +152,100 @@ void main()
     // Vertex buffer
     writeln("Vertex buffer...");
 
-    float[] vertices = [
-        0.5f, 0.5f, 0.5f, 1, 0, 0, 0, 1,
-       -0.5f, 0.5f, 0.5f, 0, 0, 0, 0, 1,
-       -0.5f,-0.5f, 0.5f, 0, 1, 0, 0, 1,
-        0.5f,-0.5f, 0.5f, 1, 1, 0, 0, 1, // v0,v1,v2,v3 (front)
+    Vector3f[] vertices = [
+        Vector3f(0.5f, 0.5f, 0.5f),
+        Vector3f(-0.5f, 0.5f, 0.5f),
+        Vector3f(-0.5f,-0.5f, 0.5f),
+        Vector3f(0.5f,-0.5f, 0.5f), // v0,v1,v2,v3 (front)
 
-        0.5f, 0.5f, 0.5f, 0, 0, 1, 0, 0,
-        0.5f,-0.5f, 0.5f, 0, 1, 1, 0, 0,
-        0.5f,-0.5f,-0.5f, 1, 1, 1, 0, 0,
-        0.5f, 0.5f,-0.5f, 1, 0, 1, 0, 0, // v0,v3,v4,v5 (right)
+        Vector3f(0.5f, 0.5f, 0.5f),
+        Vector3f(0.5f,-0.5f, 0.5f),
+        Vector3f(0.5f,-0.5f,-0.5f),
+        Vector3f(0.5f, 0.5f,-0.5f), // v0,v3,v4,v5 (right)
 
-        0.5f, 0.5f, 0.5f, 1, 1, 0, 1, 0,
-        0.5f, 0.5f,-0.5f, 1, 0, 0, 1, 0,
-       -0.5f, 0.5f,-0.5f, 0, 0, 0, 1, 0,
-       -0.5f, 0.5f, 0.5f, 0, 1, 0, 1, 0, // v0,v5,v6,v1 (top)
+        Vector3f(0.5f, 0.5f, 0.5f),
+        Vector3f(0.5f, 0.5f,-0.5f),
+        Vector3f(-0.5f, 0.5f,-0.5f),
+        Vector3f(-0.5f, 0.5f, 0.5f), // v0,v5,v6,v1 (top)
 
-       -0.5f, 0.5f, 0.5f, 1, 0, -1, 0, 0,
-       -0.5f, 0.5f,-0.5f, 0, 0, -1, 0, 0,
-       -0.5f,-0.5f,-0.5f, 0, 1, -1, 0, 0,
-       -0.5f,-0.5f, 0.5f, 1, 1, -1, 0, 0, // v1,v6,v7,v2 (left)
+        Vector3f(-0.5f, 0.5f, 0.5f),
+        Vector3f(-0.5f, 0.5f,-0.5f),
+        Vector3f(-0.5f,-0.5f,-0.5f),
+        Vector3f(-0.5f,-0.5f, 0.5f), // v1,v6,v7,v2 (left)
 
-       -0.5f,-0.5f,-0.5f, 0, 1, 0, -1, 0,
-        0.5f,-0.5f,-0.5f, 1, 1, 0, -1, 0,
-        0.5f,-0.5f, 0.5f, 1, 0, 0, -1, 0,
-       -0.5f,-0.5f, 0.5f, 0, 0, 0, -1, 0, // v7,v4,v3,v2 (bottom)
+        Vector3f(-0.5f,-0.5f,-0.5f),
+        Vector3f(0.5f,-0.5f,-0.5f),
+        Vector3f(0.5f,-0.5f, 0.5f),
+        Vector3f(-0.5f,-0.5f, 0.5f), // v7,v4,v3,v2 (bottom)
 
-        0.5f,-0.5f,-0.5f, 0, 1, 0, 0, -1,
-       -0.5f,-0.5f,-0.5f, 1, 1, 0, 0, -1,
-       -0.5f, 0.5f,-0.5f, 1, 0, 0, 0, -1,
-        0.5f, 0.5f,-0.5f, 0, 0, 0, 0, -1  // v4,v7,v6,v5 (back)
+        Vector3f(0.5f,-0.5f,-0.5f),
+        Vector3f(-0.5f,-0.5f,-0.5f),
+        Vector3f(-0.5f, 0.5f,-0.5f),
+        Vector3f(0.5f, 0.5f,-0.5f)  // v4,v7,v6,v5 (back)
+    ];
+
+    Vector2f[] texcoords = [
+        Vector2f(1, 0),
+        Vector2f(0, 0),
+        Vector2f(0, 1),
+        Vector2f(1, 1), // v0,v1,v2,v3 (front)
+
+        Vector2f(0, 0),
+        Vector2f(0, 1),
+        Vector2f(1, 1),
+        Vector2f(1, 0), // v0,v3,v4,v5 (right)
+
+        Vector2f(1, 1),
+        Vector2f(1, 0),
+        Vector2f(0, 0),
+        Vector2f(0, 1), // v0,v5,v6,v1 (top)
+
+        Vector2f(1, 0),
+        Vector2f(0, 0),
+        Vector2f(0, 1),
+        Vector2f(1, 1), // v1,v6,v7,v2 (left)
+
+        Vector2f(0, 1),
+        Vector2f(1, 1),
+        Vector2f(1, 0),
+        Vector2f(0, 0), // v7,v4,v3,v2 (bottom)
+
+        Vector2f(0, 1),
+        Vector2f(1, 1),
+        Vector2f(1, 0),
+        Vector2f(0, 0)  // v4,v7,v6,v5 (back)
+    ];
+
+    Vector3f[] normals = [
+        Vector3f(0, 0, 1),
+        Vector3f(0, 0, 1),
+        Vector3f(0, 0, 1),
+        Vector3f(0, 0, 1), // v0,v1,v2,v3 (front)
+
+        Vector3f(1, 0, 0),
+        Vector3f(1, 0, 0),
+        Vector3f(1, 0, 0),
+        Vector3f(1, 0, 0), // v0,v3,v4,v5 (right)
+
+        Vector3f(0, 1, 0),
+        Vector3f(0, 1, 0),
+        Vector3f(0, 1, 0),
+        Vector3f(0, 1, 0), // v0,v5,v6,v1 (top)
+
+        Vector3f(-1, 0, 0),
+        Vector3f(-1, 0, 0),
+        Vector3f(-1, 0, 0),
+        Vector3f(-1, 0, 0), // v1,v6,v7,v2 (left)
+
+        Vector3f(0, -1, 0),
+        Vector3f(0, -1, 0),
+        Vector3f(0, -1, 0),
+        Vector3f(0, -1, 0), // v7,v4,v3,v2 (bottom)
+
+        Vector3f(0, 0, -1),
+        Vector3f(0, 0, -1),
+        Vector3f(0, 0, -1),
+        Vector3f(0, 0, -1)  // v4,v7,v6,v5 (back)
     ];
 
     ushort[] indices = [
@@ -189,34 +257,26 @@ void main()
         20,21,22,  22,23,20     // v4-v7-v6, v6-v5-v4 (back)
     ];
 
-    size_t verticesSize = vertices.length * float.sizeof;
-    WGPUBufferDescriptor verticesBufferDescriptor = WGPUBufferDescriptor(verticesSize,
-        WGPUBufferUsage_VERTEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
-    ubyte* vertexBufferMem;
-    WGPUBufferId vertexBuffer = wgpu_device_create_buffer_mapped(device, &verticesBufferDescriptor, &vertexBufferMem);
-    memcpy(vertexBufferMem, vertices.ptr, verticesSize);
-    wgpu_buffer_unmap(vertexBuffer);
+    GPUMesh cubeGPUMesh = gpuMesh(device, vertices, texcoords, normals, indices);
 
-    size_t indicesSize = indices.length * ushort.sizeof;
-    WGPUBufferDescriptor indicesBufferDescriptor = WGPUBufferDescriptor(indicesSize,
-        WGPUBufferUsage_INDEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
-    ubyte* indexBufferMem;
-    WGPUBufferId indexBuffer = wgpu_device_create_buffer_mapped(device, &indicesBufferDescriptor, &indexBufferMem);
-    memcpy(indexBufferMem, indices.ptr, indicesSize);
-    wgpu_buffer_unmap(indexBuffer);
-    
+    InputStream istrm = openForInput("data/cerberus.obj");
+
+    GPUMesh objGPUMesh = loadOBJ(device, istrm);
+    WGPUBufferId vertexBuffer = objGPUMesh.attributeBuffer;
+    WGPUBufferId indexBuffer = objGPUMesh.indexBuffer;
+
     writeln("OK");
 
     // Texture
     writeln("Textures...");
-    auto imgAlbedo = loadPNG("data/albedo.png");
-    auto imgNormal = loadPNG("data/normal.png");
-    auto imgHeight = loadPNG("data/height.png");
+    auto imgAlbedo = loadPNG("data/cerberus-albedo.png");
+    auto imgNormal = loadPNG("data/cerberus-normal.png");
+    //auto imgHeight = loadPNG("data/height.png");
 
     WGPUTextureDescriptor textureDescriptor =
     {
         size: WGPUExtent3d(imgAlbedo.width, imgAlbedo.height, 1),
-        array_layer_count: 3,
+        array_layer_count: 2, //3
         mip_level_count: 1,
         sample_count: 1,
         dimension: WGPUTextureDimension.D2,
@@ -233,7 +293,7 @@ void main()
         base_mip_level: 0,
         level_count: 1,
         base_array_layer: 0,
-        array_layer_count: 3
+        array_layer_count: 2 //3
     };
     WGPUTextureViewId textureView = wgpu_texture_create_view(texture, &textureViewDescriptor);
 
@@ -271,8 +331,8 @@ void main()
 
     imageToTexture(imgAlbedo, texture, 0);
     imageToTexture(imgNormal, texture, 1);
-    imageToTexture(imgHeight, texture, 2);
-    
+    //imageToTexture(imgHeight, texture, 2);
+
     writeln("OK");
 
     // Sampler
@@ -290,7 +350,7 @@ void main()
         compare_function: WGPUCompareFunction.Always
     };
     WGPUSamplerId sampler = wgpu_device_create_sampler(device, &samplerDescriptor);
-    
+
     writeln("OK");
 
     // Uniform buffer
@@ -348,7 +408,7 @@ void main()
     ];
     WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor(uniformsBindGroupLayout, uniformBindGroupBindings.ptr, uniformBindGroupBindings.length);
     WGPUBindGroupId bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
-    
+
     writeln("OK");
 
     // Pipeline
@@ -376,7 +436,7 @@ void main()
         _module: fragmentShader,
         entry_point: "main".ptr
     };
-    
+
     writeln("OK");
 
     writeln("Pipeline...");
@@ -483,10 +543,12 @@ void main()
             vertex_buffers: &vertexBufferDescriptor,
             vertex_buffers_length: 1,
         },
-        sample_count: 1
+        sample_count: 1,
+        sample_mask: 1,
+        alpha_to_coverage_enabled: 0
     };
     WGPURenderPipelineId renderPipeline = wgpu_device_create_render_pipeline(device, &renderPipelineDescriptor);
-    
+
     writeln("OK");
 
     // Swapchain
@@ -571,9 +633,9 @@ void main()
     }
 
     auto depthStencilAttachment = createDepthTexture(windowWidth, windowHeight);
-    
+
     writeln("OK");
-    
+
     // Main loop
     writeln("Running...");
     bool running = true;
@@ -600,12 +662,12 @@ void main()
         }
 
         // Update uniforms
-        angle += 1.0f;
+        angle += 0.5f;
         uniforms.modelViewMatrix =
-            translationMatrix(Vector3f(0.0f, 0.0f, -5.0f)) *
-            rotationMatrix(Axis.x, degtorad(angle)) *
+            scaleMatrix(Vector3f(1, -1, 1)) *
+            translationMatrix(Vector3f(0.0f, -5.0f, -15.0f)) *
             rotationMatrix(Axis.y, degtorad(angle)) *
-            scaleMatrix(Vector3f(2.0f, 2.0f, 2.0f));
+            scaleMatrix(Vector3f(1, 1, 1));
         uniforms.normalMatrix = uniforms.modelViewMatrix.inverse.transposed;
 
         nextTexture = wgpu_swap_chain_get_next_texture(swapchain);
@@ -638,7 +700,9 @@ void main()
         wgpu_render_pass_set_vertex_buffers(pass, 0, &vertexBuffer, &offset, 1);
         wgpu_render_pass_set_index_buffer(pass, indexBuffer, 0);
 
-        wgpu_render_pass_draw_indexed(pass, cast(uint)(indices.length), 1, 0, 0, 0);
+        //FIXME: indexed rendering
+        //wgpu_render_pass_draw_indexed(pass, objGPUMesh.numIndices, 1, 0, 0, 0);
+        wgpu_render_pass_draw(pass, objGPUMesh.numVertices, 1, 0, 0);
 
         wgpu_render_pass_end_pass(pass);
 

@@ -29,8 +29,9 @@ void main()
 {
     vec4 eyeVertex = uniforms.modelViewMatrix * vec4(vaVertex, 1.0);
     vec4 clipVertex = uniforms.projectionMatrix * eyeVertex;
+    vec3 normal = (uniforms.normalMatrix * vec4(vaNormal, 0.0)).xyz;
     outputs.eyePosition = eyeVertex.xyz;
-    outputs.eyeNormal = (uniforms.normalMatrix * vec4(vaNormal, 0.0)).xyz;
+    outputs.eyeNormal = normal;
     outputs.texcoord = vaTexcoord;
     gl_Position = clipVertex;
 }
