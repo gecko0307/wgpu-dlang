@@ -70,6 +70,11 @@ void main()
 
     if (wgpuSupport == WGPUSupport.noLibrary)
         quit("Error: WGPU is not installed");
+    
+    version(OSX)
+    {
+        SDL_SetHint(SDL_HINT_RENDER_DRIVER, toStringz("metal"));
+    }
 
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
         quit("Error: failed to init SDL: " ~ to!string(SDL_GetError()));
@@ -462,6 +467,7 @@ void main()
     }
     else version(linux)
     {
+        // Needs test!
         if (wmInfo.subsystem == SDL_SYSWM_X11)
         {
             auto x11_display = wmInfo.info.x11.display;
@@ -481,15 +487,15 @@ void main()
     }
     else version(OSX)
     {
-        // Waiting for SDL devs to come up with that...
-        // auto m_layer = ?
-        // surface = wgpu_create_surface_from_metal_layer(m_layer);
-        
-        quit("macOS is not supported");
+        // Needs test!
+        SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
+        auto m_layer = SDL_RenderGetMetalLayer(renderer);
+        surface = wgpu_create_surface_from_metal_layer(m_layer);
+        SDL_DestroyRenderer(renderer);
     }
     else
     {
-        static assert(0, "This operating system is not supported, sorry");
+        quit("Unsupported system, sorry");
     }
 
     WGPUSwapChainId createSwapchain(uint w, uint h)

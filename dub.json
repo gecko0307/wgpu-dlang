@@ -8,13 +8,13 @@
     ],
     
     "dependencies": {
-        "bindbc-sdl": "~>0.8.0",
+        "bindbc-sdl": "~>0.13.0",
         "bindbc-wgpu": "~>0.1.0-alpha4",
         "dlib": "~>0.17.0"
     },
     
     "versions": [
-        "SDL_207"
+        "SDL_2010"
     ],
 
     "importPaths": [
