@@ -106,15 +106,17 @@ void main()
     tangentNormal.y *= -1.0;
     eyeNormalNorm = normalize(tangentToEye * tangentNormal);
 
+    const vec3 lightEye = normalize(vec3(1.0, -1.0, 1.0));
+
     vec3 albedo = toLinear(texture(sampler2DArray(myTexture, mySampler), vec3(shiftedTexcoord, 0)).rgb);
 
-    const vec3 lightEye = normalize(vec3(1.0, -1.0, 1.0));
     float diffuse = max(dot(eyeNormalNorm, lightEye), 0.2);
     float specular = blinnPhong(lightEye, viewDirection, eyeNormalNorm, 64.0);
     const float specularity = 0.5;
+    vec3 radiance = albedo * diffuse + specular * specularity;
 
-    /*
     // GGX BRDF
+    /*
     const float roughness = 0.2;
     const float metallic = 0.0;
     vec3 f0 = mix(vec3(0.04), albedo, metallic);
@@ -127,8 +129,6 @@ void main()
     vec3 specular = (NDF * G * F) / max(4.0 * max(dot(eyeNormalNorm, viewDirection), 0.0) * NL, 0.001);
     vec3 radiance = (kD * albedo * invPI + specular) * NL;
     */
-
-    vec3 radiance = albedo * diffuse + specular * specularity;
 
     outColor = vec4(toGamma(radiance), 1.0);
 }

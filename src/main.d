@@ -542,7 +542,7 @@ void main()
         depth_stencil_state: &depthStencilStateDecsriptor,
         vertex_input:
         {
-            index_format: WGPUIndexFormat.Uint16,
+            index_format: WGPUIndexFormat.Uint32,
             vertex_buffers: &vertexBufferDescriptor,
             vertex_buffers_length: 1,
         },
@@ -703,9 +703,7 @@ void main()
         wgpu_render_pass_set_vertex_buffers(pass, 0, &vertexBuffer, &offset, 1);
         wgpu_render_pass_set_index_buffer(pass, indexBuffer, 0);
 
-        //FIXME: indexed rendering
-        //wgpu_render_pass_draw_indexed(pass, numIndices, 1, 0, 0, 0);
-        wgpu_render_pass_draw(pass, objGPUMesh.numVertices, 1, 0, 0);
+        wgpu_render_pass_draw_indexed(pass, numIndices, 1, 0, 0, 0);
 
         wgpu_render_pass_end_pass(pass);
 
