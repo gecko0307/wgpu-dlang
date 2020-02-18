@@ -1,7 +1,7 @@
 # wgpu-dlang
-[bindbc-wgpu](https://github.com/gecko0307/bindbc-wgpu) usage example - a cube rendering demo. Uses SDL2 for window creation and [glslangValidator](https://github.com/KhronosGroup/glslang) to compile shaders at build time. 
+[bindbc-wgpu](https://github.com/gecko0307/bindbc-wgpu) usage example - a model rendering demo. Uses SDL2 for window creation and [glslangValidator](https://github.com/KhronosGroup/glslang) to compile shaders at build time. 
 
-Warning: highly experimental! I've tested it only on 64-bit Windows so far. On other platforms you have to install glslangValidator.
+Warning: highly experimental! I've tested it only on 64-bit Windows so far. On other platforms you have to install glslangValidator. It probably should work on Linux X11/Wayland, but not yet on macOS, because I have no idea how to get `CAMetalLayer` from SDL.
 
 [![Screenshot](screenshot.jpg)](screenshot.jpg)
 
