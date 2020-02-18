@@ -54,7 +54,7 @@ struct GPUMeshVertexAttribute
     Vector3f n;
 }
 
-GPUMesh gpuMesh(WGPUDeviceId device, Vector3f[] vertices, Vector2f[] texcoords, Vector3f[] normals, ushort[3][] indices)
+GPUMesh gpuMesh(WGPUDeviceId device, Vector3f[] vertices, Vector2f[] texcoords, Vector3f[] normals, ushort[] indices)
 {
     GPUMeshVertexAttribute[] attributes = New!(GPUMeshVertexAttribute[])(vertices.length);
 
@@ -74,7 +74,7 @@ GPUMesh gpuMesh(WGPUDeviceId device, Vector3f[] vertices, Vector2f[] texcoords, 
     memcpy(attributeBufferMem, attributes.ptr, attributesSize);
     wgpu_buffer_unmap(attributeBuffer);
 
-    size_t indicesSize = cast(size_t)indices.length * 3 * ushort.sizeof;
+    size_t indicesSize = cast(size_t)indices.length * ushort.sizeof;
     WGPUBufferDescriptor indexBufferDescriptor = WGPUBufferDescriptor(indicesSize, WGPUBufferUsage_INDEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
     ubyte* indexBufferMem;
     indexBuffer = wgpu_device_create_buffer_mapped(device, &indexBufferDescriptor, &indexBufferMem);
@@ -83,9 +83,7 @@ GPUMesh gpuMesh(WGPUDeviceId device, Vector3f[] vertices, Vector2f[] texcoords, 
 
     Delete(attributes);
 
-    writeln(vertices.length, " ", indices.length * 3);
-
-    return GPUMesh(attributeBuffer, indexBuffer, cast(uint)vertices.length, cast(uint)indices.length * 3);
+    return GPUMesh(attributeBuffer, indexBuffer, cast(uint)vertices.length, cast(uint)indices.length);
 }
 
 struct ObjFace
@@ -295,8 +293,8 @@ GPUMesh loadOBJ(WGPUDeviceId device, InputStream istrm)
     if (warnAboutQuads)
         writeln("Warning: OBJ file includes quads, but loadOBJ supports only triangles");
 
-    auto indices = New!(ushort[3][])(tmpFaces.length); //New!(ushort[])(tmpFaces.length * 3);
-    uint numUniqueVerts = cast(uint)indices.length * 3;
+    auto indices = New!(ushort[])(tmpFaces.length * 3);
+    uint numUniqueVerts = cast(uint)indices.length;
     auto vertices = New!(Vector3f[])(numUniqueVerts);
     auto normals = New!(Vector3f[])(numUniqueVerts);
     auto texcoords = New!(Vector2f[])(numUniqueVerts);
@@ -346,9 +344,9 @@ GPUMesh loadOBJ(WGPUDeviceId device, InputStream istrm)
             texcoords[index+2] = Vector2f(0, 0);
         }
 
-        indices[i][0] = cast(ushort)index;
-        indices[i][1] = cast(ushort)(index + 1);
-        indices[i][2] = cast(ushort)(index + 2);
+        indices[index] = cast(ushort)index;
+        indices[index+1] = cast(ushort)(index + 1);
+        indices[index+2] = cast(ushort)(index + 2);
 
         index += 3;
     }
