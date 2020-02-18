@@ -149,118 +149,7 @@ void main()
 
     // Vertex buffer
     writeln("Vertex buffer...");
-
-    /*
-    Vector3f[] vertices = [
-        Vector3f(0.5f, 0.5f, 0.5f),
-        Vector3f(-0.5f, 0.5f, 0.5f),
-        Vector3f(-0.5f,-0.5f, 0.5f),
-        Vector3f(0.5f,-0.5f, 0.5f), // v0,v1,v2,v3 (front)
-
-        Vector3f(0.5f, 0.5f, 0.5f),
-        Vector3f(0.5f,-0.5f, 0.5f),
-        Vector3f(0.5f,-0.5f,-0.5f),
-        Vector3f(0.5f, 0.5f,-0.5f), // v0,v3,v4,v5 (right)
-
-        Vector3f(0.5f, 0.5f, 0.5f),
-        Vector3f(0.5f, 0.5f,-0.5f),
-        Vector3f(-0.5f, 0.5f,-0.5f),
-        Vector3f(-0.5f, 0.5f, 0.5f), // v0,v5,v6,v1 (top)
-
-        Vector3f(-0.5f, 0.5f, 0.5f),
-        Vector3f(-0.5f, 0.5f,-0.5f),
-        Vector3f(-0.5f,-0.5f,-0.5f),
-        Vector3f(-0.5f,-0.5f, 0.5f), // v1,v6,v7,v2 (left)
-
-        Vector3f(-0.5f,-0.5f,-0.5f),
-        Vector3f(0.5f,-0.5f,-0.5f),
-        Vector3f(0.5f,-0.5f, 0.5f),
-        Vector3f(-0.5f,-0.5f, 0.5f), // v7,v4,v3,v2 (bottom)
-
-        Vector3f(0.5f,-0.5f,-0.5f),
-        Vector3f(-0.5f,-0.5f,-0.5f),
-        Vector3f(-0.5f, 0.5f,-0.5f),
-        Vector3f(0.5f, 0.5f,-0.5f)  // v4,v7,v6,v5 (back)
-    ];
-
-    Vector2f[] texcoords = [
-        Vector2f(1, 0),
-        Vector2f(0, 0),
-        Vector2f(0, 1),
-        Vector2f(1, 1), // v0,v1,v2,v3 (front)
-
-        Vector2f(0, 0),
-        Vector2f(0, 1),
-        Vector2f(1, 1),
-        Vector2f(1, 0), // v0,v3,v4,v5 (right)
-
-        Vector2f(1, 1),
-        Vector2f(1, 0),
-        Vector2f(0, 0),
-        Vector2f(0, 1), // v0,v5,v6,v1 (top)
-
-        Vector2f(1, 0),
-        Vector2f(0, 0),
-        Vector2f(0, 1),
-        Vector2f(1, 1), // v1,v6,v7,v2 (left)
-
-        Vector2f(0, 1),
-        Vector2f(1, 1),
-        Vector2f(1, 0),
-        Vector2f(0, 0), // v7,v4,v3,v2 (bottom)
-
-        Vector2f(0, 1),
-        Vector2f(1, 1),
-        Vector2f(1, 0),
-        Vector2f(0, 0)  // v4,v7,v6,v5 (back)
-    ];
-
-    Vector3f[] normals = [
-        Vector3f(0, 0, 1),
-        Vector3f(0, 0, 1),
-        Vector3f(0, 0, 1),
-        Vector3f(0, 0, 1), // v0,v1,v2,v3 (front)
-
-        Vector3f(1, 0, 0),
-        Vector3f(1, 0, 0),
-        Vector3f(1, 0, 0),
-        Vector3f(1, 0, 0), // v0,v3,v4,v5 (right)
-
-        Vector3f(0, 1, 0),
-        Vector3f(0, 1, 0),
-        Vector3f(0, 1, 0),
-        Vector3f(0, 1, 0), // v0,v5,v6,v1 (top)
-
-        Vector3f(-1, 0, 0),
-        Vector3f(-1, 0, 0),
-        Vector3f(-1, 0, 0),
-        Vector3f(-1, 0, 0), // v1,v6,v7,v2 (left)
-
-        Vector3f(0, -1, 0),
-        Vector3f(0, -1, 0),
-        Vector3f(0, -1, 0),
-        Vector3f(0, -1, 0), // v7,v4,v3,v2 (bottom)
-
-        Vector3f(0, 0, -1),
-        Vector3f(0, 0, -1),
-        Vector3f(0, 0, -1),
-        Vector3f(0, 0, -1)  // v4,v7,v6,v5 (back)
-    ];
-
-    ushort[] indices = [
-        0, 1, 2,  2, 3, 0,    // v0-v1-v2, v2-v3-v0 (front)
-        4, 5, 6,  6, 7, 4,    // v0-v3-v4, v4-v5-v0 (right)
-        8, 9,10,  10,11, 8,   // v0-v5-v6, v6-v1-v0 (top)
-        12,13,14, 14,15,12,   // v1-v6-v7, v7-v2-v1 (left)
-        16,17,18, 18,19,16,   // v7-v4-v3, v3-v2-v7 (bottom)
-        20,21,22, 22,23,20    // v4-v7-v6, v6-v5-v4 (back)
-    ];
-    */
-
-    //GPUMesh cubeGPUMesh = gpuMesh(device, vertices, texcoords, normals, indices);
-
     InputStream istrm = openForInput("data/cerberus.obj");
-
     GPUMesh objGPUMesh = loadOBJ(device, istrm);
     WGPUBufferId vertexBuffer = objGPUMesh.attributeBuffer;
     WGPUBufferId indexBuffer = objGPUMesh.indexBuffer;
@@ -274,7 +163,6 @@ void main()
     auto imgNormal = loadPNG("data/cerberus-normal.png");
     auto imgRoughness = loadPNG("data/cerberus-roughness.png");
     auto imgMetallic = loadPNG("data/cerberus-metallic.png");
-    //auto imgHeight = loadPNG("data/height.png");
 
     WGPUTextureDescriptor textureDescriptor =
     {
