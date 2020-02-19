@@ -133,7 +133,7 @@ void main()
     WGPUTextureDescriptor textureDescriptor =
     {
         size: WGPUExtent3d(imgAlbedo.width, imgAlbedo.height, 1),
-        array_layer_count: 4, //3
+        array_layer_count: 4,
         mip_level_count: 1,
         sample_count: 1,
         dimension: WGPUTextureDimension.D2,
@@ -150,7 +150,7 @@ void main()
         base_mip_level: 0,
         level_count: 1,
         base_array_layer: 0,
-        array_layer_count: 4 //3
+        array_layer_count: 4
     };
     WGPUTextureViewId textureView = wgpu_texture_create_view(texture, &textureViewDescriptor);
 
