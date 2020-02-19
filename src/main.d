@@ -62,15 +62,15 @@ void main()
     auto sdlSupport = loadSDL();
     writeln("sdlSupport: ", sdlSupport);
 
-    auto wgpuSupport = loadWGPU();
-    writeln("wgpuSupport: ", wgpuSupport);
-
     if (sdlSupport == SDLSupport.noLibrary)
         quit("Error: SDL is not installed");
 
+    auto wgpuSupport = loadWGPU();
+    writeln("wgpuSupport: ", wgpuSupport);
+
     if (wgpuSupport == WGPUSupport.noLibrary)
         quit("Error: WGPU is not installed");
-    
+
     version(OSX)
     {
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, toStringz("metal"));
@@ -86,8 +86,6 @@ void main()
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         windowWidth, windowHeight,
         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    SDL_SysWMinfo wmInfo;
-    SDL_GetWindowWMInfo(window, &wmInfo);
 
     writeln("Adapter...");
     WGPURequestAdapterOptions reqAdaptersOptions =
@@ -114,43 +112,6 @@ void main()
     writeln("OK");
 
     WGPUQueueId queue = wgpu_device_get_queue(device);
-
-    writeln("Bind group layout...");
-    WGPUBindGroupLayoutBinding layoutBindingUniforms =
-    {
-        binding: 0,
-        visibility: WGPUShaderStage_VERTEX | WGPUShaderStage_FRAGMENT,
-        ty: WGPUBindingType.UniformBuffer,
-        texture_dimension: WGPUTextureViewDimension.D1,
-        multisampled: false,
-        dynamic: false
-    };
-    WGPUBindGroupLayoutBinding layoutBindingSampler =
-    {
-        binding: 1,
-        visibility: WGPUShaderStage_FRAGMENT,
-        ty: WGPUBindingType.Sampler,
-        texture_dimension: WGPUTextureViewDimension.D2Array,
-        multisampled: false,
-        dynamic: false
-    };
-    WGPUBindGroupLayoutBinding layoutBindingTexture =
-    {
-        binding: 2,
-        visibility: WGPUShaderStage_FRAGMENT,
-        ty: WGPUBindingType.SampledTexture,
-        texture_dimension: WGPUTextureViewDimension.D2Array,
-        multisampled: false,
-        dynamic: false
-    };
-
-    WGPUBindGroupLayoutBinding[] bindGroupLayoutBindings =
-    [
-        layoutBindingUniforms, layoutBindingSampler, layoutBindingTexture
-    ];
-    WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor(bindGroupLayoutBindings.ptr, bindGroupLayoutBindings.length);
-    WGPUBindGroupLayoutId uniformsBindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
-    writeln("OK");
 
     // Vertex buffer
     writeln("Vertex buffer...");
@@ -250,8 +211,43 @@ void main()
 
     writeln("OK");
 
-    // Uniform buffer
-    writeln("Uniforms...");
+    // Bind group
+    writeln("Bind group...");
+    WGPUBindGroupLayoutBinding bindingUniforms =
+    {
+        binding: 0,
+        visibility: WGPUShaderStage_VERTEX | WGPUShaderStage_FRAGMENT,
+        ty: WGPUBindingType.UniformBuffer,
+        texture_dimension: WGPUTextureViewDimension.D1,
+        multisampled: false,
+        dynamic: false
+    };
+    WGPUBindGroupLayoutBinding bindingSampler =
+    {
+        binding: 1,
+        visibility: WGPUShaderStage_FRAGMENT,
+        ty: WGPUBindingType.Sampler,
+        texture_dimension: WGPUTextureViewDimension.D2Array,
+        multisampled: false,
+        dynamic: false
+    };
+    WGPUBindGroupLayoutBinding bindingTexture =
+    {
+        binding: 2,
+        visibility: WGPUShaderStage_FRAGMENT,
+        ty: WGPUBindingType.SampledTexture,
+        texture_dimension: WGPUTextureViewDimension.D2Array,
+        multisampled: false,
+        dynamic: false
+    };
+
+    WGPUBindGroupLayoutBinding[] bindGroupLayoutBindings =
+    [
+        bindingUniforms, bindingSampler, bindingTexture
+    ];
+    WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor(bindGroupLayoutBindings.ptr, bindGroupLayoutBindings.length);
+    WGPUBindGroupLayoutId uniformsBindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
+
     struct Uniforms
     {
         Matrix4x4f modelViewMatrix;
@@ -282,26 +278,23 @@ void main()
 
     WGPUBufferId uniformBuffer = wgpu_device_create_buffer(device, &bufferDescriptor);
 
-    auto bufBinding = WGPUBufferBinding(uniformBuffer, 0, uniformsSize);
-
     WGPUBindingResource bufBindingResource;
     bufBindingResource.tag = WGPUBindingResource_Tag.Buffer;
-    bufBindingResource.buffer = WGPUBindingResource_WGPUBuffer_Body(bufBinding);
-    WGPUBindGroupBinding uniformsBinding = WGPUBindGroupBinding(0, bufBindingResource);
+    bufBindingResource.buffer = WGPUBindingResource_WGPUBuffer_Body(WGPUBufferBinding(uniformBuffer, 0, uniformsSize));
 
     WGPUBindingResource samplerBindingResource;
     samplerBindingResource.tag = WGPUBindingResource_Tag.Sampler;
     samplerBindingResource.sampler = WGPUBindingResource_WGPUSampler_Body(sampler);
-    WGPUBindGroupBinding samplerBinding = WGPUBindGroupBinding(1, samplerBindingResource);
 
     WGPUBindingResource textureBindingResource;
     textureBindingResource.tag = WGPUBindingResource_Tag.TextureView;
     textureBindingResource.texture_view = WGPUBindingResource_WGPUTextureView_Body(textureView);
-    WGPUBindGroupBinding textureBinding = WGPUBindGroupBinding(2, textureBindingResource);
 
     WGPUBindGroupBinding[] uniformBindGroupBindings =
     [
-        uniformsBinding, samplerBinding, textureBinding
+        WGPUBindGroupBinding(0, bufBindingResource),
+        WGPUBindGroupBinding(1, samplerBindingResource),
+        WGPUBindGroupBinding(2, textureBindingResource)
     ];
     WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor(uniformsBindGroupLayout, uniformBindGroupBindings.ptr, uniformBindGroupBindings.length);
     WGPUBindGroupId bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
@@ -450,8 +443,11 @@ void main()
 
     // Swapchain
     writeln("Swapchain...");
-    WGPUSurfaceId surface;
+    SDL_SysWMinfo wmInfo;
+    SDL_GetWindowWMInfo(window, &wmInfo);
     writeln("Subsystem: ", wmInfo.subsystem);
+
+    WGPUSurfaceId surface;
     version(Windows)
     {
         if (wmInfo.subsystem == SDL_SYSWM_WINDOWS)
@@ -607,7 +603,7 @@ void main()
         // Update uniforms
         angle += 0.5f;
         uniforms.modelViewMatrix =
-            scaleMatrix(Vector3f(1, -1, 1)) * // Flip Y
+            scaleMatrix(Vector3f(1, -1, 1)) * // Flip Y for OpenGL compatibility
             translationMatrix(Vector3f(0.0f, -5.0f, -15.0f)) *
             rotationMatrix(Axis.y, degtorad(angle)) *
             scaleMatrix(Vector3f(1, 1, 1));
