@@ -257,6 +257,7 @@ class WGPUApplication: Application
 
     void resize(uint w, uint h)
     {
+        window.querySize();
         _swapchain = createSwapchain(w, h);
     }
 }

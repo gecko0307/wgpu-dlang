@@ -113,7 +113,7 @@ class Window
         }
     }
 
-    protected void querySize()
+    void querySize()
     {
         int w = _width;
         int h = _height;

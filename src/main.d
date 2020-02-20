@@ -49,10 +49,7 @@ import mesh;
 
 void main()
 {
-    uint windowWidth = 800;
-    uint windowHeight = 600;
-
-    WGPUApplication app = New!WGPUApplication(windowWidth, windowHeight);
+    WGPUApplication app = New!WGPUApplication(800, 600);
     auto device = app.device;
     auto queue = app.queue;
 
@@ -199,7 +196,7 @@ void main()
     }
 
     float fov = 60.0f;
-    float aspectRatio = cast(float)windowWidth / cast(float)windowHeight;
+    float aspectRatio = cast(float)app.window.width / cast(float)app.window.height;
 
     Uniforms uniforms =
     {
@@ -447,7 +444,7 @@ void main()
         return depthStencilAttachment;
     }
 
-    auto depthStencilAttachment = createDepthTexture(windowWidth, windowHeight);
+    auto depthStencilAttachment = createDepthTexture(app.window.width, app.window.height);
 
     writeln("OK");
 
@@ -465,8 +462,8 @@ void main()
             {
                 if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
                 {
-                    windowWidth = event.window.data1;
-                    windowHeight = event.window.data2;
+                    auto windowWidth = event.window.data1;
+                    auto windowHeight = event.window.data2;
                     writeln(windowWidth, "x", windowHeight);
                     aspectRatio = cast(float)windowWidth / cast(float)windowHeight;
                     uniforms.projectionMatrix = perspectiveMatrix(fov, aspectRatio, 0.01f, 1000.0f);
