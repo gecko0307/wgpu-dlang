@@ -44,74 +44,17 @@ import dlib.math;
 import dlib.geometry;
 import dlib.filesystem;
 
+import application;
 import mesh;
-
-void quit(string message)
-{
-    writeln(message);
-    core.stdc.stdlib.exit(1);
-}
-
-extern(C) void requestAdapterCallback(WGPUAdapterId adapter, void* userdata)
-{
-    *cast(WGPUAdapterId*)userdata = adapter;
-}
 
 void main()
 {
-    auto sdlSupport = loadSDL();
-    writeln("sdlSupport: ", sdlSupport);
-
-    if (sdlSupport == SDLSupport.noLibrary)
-        quit("Error: SDL is not installed");
-
-    auto wgpuSupport = loadWGPU();
-    writeln("wgpuSupport: ", wgpuSupport);
-
-    if (wgpuSupport == WGPUSupport.noLibrary)
-        quit("Error: WGPU is not installed");
-
-    version(OSX)
-    {
-        SDL_SetHint(SDL_HINT_RENDER_DRIVER, toStringz("metal"));
-    }
-
-    if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
-        quit("Error: failed to init SDL: " ~ to!string(SDL_GetError()));
-
     uint windowWidth = 800;
     uint windowHeight = 600;
 
-    auto window = SDL_CreateWindow(toStringz("WebGPU Demo"),
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        windowWidth, windowHeight,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-
-    writeln("Adapter...");
-    WGPURequestAdapterOptions reqAdaptersOptions =
-    {
-        power_preference: WGPUPowerPreference.HighPerformance
-    };
-    WGPUAdapterId adapter;
-    wgpu_request_adapter_async(&reqAdaptersOptions, 2 | 4 | 8, &requestAdapterCallback, &adapter);
-    writeln("OK");
-
-    writeln("Device...");
-    WGPUDeviceDescriptor deviceDescriptor =
-    {
-        extensions:
-        {
-            anisotropic_filtering: false
-        },
-        limits:
-        {
-            max_bind_groups: 3
-        }
-    };
-    WGPUDeviceId device = wgpu_adapter_request_device(adapter, &deviceDescriptor);
-    writeln("OK");
-
-    WGPUQueueId queue = wgpu_device_get_queue(device);
+    WGPUApplication app = New!WGPUApplication(windowWidth, windowHeight);
+    auto device = app.device;
+    auto queue = app.queue;
 
     // Vertex buffer
     writeln("Vertex buffer...");
@@ -441,74 +384,7 @@ void main()
 
     writeln("OK");
 
-    // Swapchain
-    writeln("Swapchain...");
-    SDL_SysWMinfo wmInfo;
-    SDL_GetWindowWMInfo(window, &wmInfo);
-    writeln("Subsystem: ", wmInfo.subsystem);
-
-    WGPUSurfaceId surface;
-    version(Windows)
-    {
-        if (wmInfo.subsystem == SDL_SYSWM_WINDOWS)
-        {
-            auto win_hwnd = wmInfo.info.win.window;
-            auto win_hinstance = wmInfo.info.win.hinstance;
-            surface = wgpu_create_surface_from_windows_hwnd(win_hinstance, win_hwnd);
-        }
-        else
-        {
-            quit("Unsupported subsystem, sorry");
-        }
-    }
-    else version(linux)
-    {
-        // Needs test!
-        if (wmInfo.subsystem == SDL_SYSWM_X11)
-        {
-            auto x11_display = wmInfo.info.x11.display;
-            auto x11_window = wmInfo.info.x11.window;
-            surface = wgpu_create_surface_from_xlib(cast(void**)x11_display, x11_window);
-        }
-        else if (wmInfo.subsystem == SDL_SYSWM_WAYLAND)
-        {
-            auto wl_surface = wmInfo.info.wl.surface;
-            auto wl_display = wmInfo.info.wl.display;
-            surface = wgpu_create_surface_from_wayland(wl_surface, wl_display);
-        }
-        else
-        {
-            quit("Unsupported subsystem, sorry");
-        }
-    }
-    else version(OSX)
-    {
-        // Needs test!
-        SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
-        auto m_layer = SDL_RenderGetMetalLayer(renderer);
-        surface = wgpu_create_surface_from_metal_layer(m_layer);
-        SDL_DestroyRenderer(renderer);
-    }
-    else
-    {
-        quit("Unsupported system, sorry");
-    }
-
-    WGPUSwapChainId createSwapchain(uint w, uint h)
-    {
-        WGPUSwapChainDescriptor sd = {
-            usage: WGPUTextureUsage_OUTPUT_ATTACHMENT,
-            format: WGPUTextureFormat.Bgra8Unorm,
-            width: w,
-            height: h,
-            present_mode: WGPUPresentMode.Vsync
-        };
-        return wgpu_device_create_swap_chain(device, surface, &sd);
-    }
-
-    WGPUSwapChainId swapchain = createSwapchain(windowWidth, windowHeight);
-
-    // Render pass attachments
+    writeln("Attachments...");
     WGPUSwapChainOutput nextTexture;
     WGPURenderPassColorAttachmentDescriptor colorAttachment =
     {
@@ -594,7 +470,7 @@ void main()
                     writeln(windowWidth, "x", windowHeight);
                     aspectRatio = cast(float)windowWidth / cast(float)windowHeight;
                     uniforms.projectionMatrix = perspectiveMatrix(fov, aspectRatio, 0.01f, 1000.0f);
-                    swapchain = createSwapchain(windowWidth, windowHeight);
+                    app.resize(windowWidth, windowHeight);
                     depthStencilAttachment = createDepthTexture(windowWidth, windowHeight);
                 }
             }
@@ -609,7 +485,7 @@ void main()
             scaleMatrix(Vector3f(1, 1, 1));
         uniforms.normalMatrix = uniforms.modelViewMatrix.inverse.transposed;
 
-        nextTexture = wgpu_swap_chain_get_next_texture(swapchain);
+        nextTexture = wgpu_swap_chain_get_next_texture(app.swapchain);
         colorAttachment.attachment = nextTexture.view_id;
 
         WGPUCommandEncoderDescriptor commandEncDescriptor = WGPUCommandEncoderDescriptor(0);
@@ -645,10 +521,10 @@ void main()
 
         WGPUCommandBufferId cmdBuf = wgpu_command_encoder_finish(cmdEncoder, null);
         wgpu_queue_submit(queue, &cmdBuf, 1);
-        wgpu_swap_chain_present(swapchain);
+        wgpu_swap_chain_present(app.swapchain);
 
         wgpu_buffer_destroy(uniformBufferTmp);
     }
 
-    SDL_Quit();
+    Delete(app);
 }
