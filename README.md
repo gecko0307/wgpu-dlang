@@ -3,6 +3,8 @@
 
 **Warning: highly experimental!** I've tested it only on 64-bit Windows so far. On other platforms you have to install glslangValidator. It probably should work on Linux (X11/Wayland) and macOS (Metal), however has not been tested yet.
 
+I'm currently writing a minimal object-oriented framework for the demo, so the code can be messy.
+
 [![Screenshot](screenshot.jpg)](screenshot.jpg)
 
 ## What is WebGPU?

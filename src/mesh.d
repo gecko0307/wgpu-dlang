@@ -39,7 +39,7 @@ import dlib.geometry.trimesh;
 import dlib.filesystem.stdfs;
 import bindbc.wgpu;
 
-struct GPUMesh
+struct WGPUMesh
 {
     WGPUBufferId attributeBuffer;
     WGPUBufferId indexBuffer;
@@ -47,16 +47,16 @@ struct GPUMesh
     uint numIndices;
 }
 
-struct GPUMeshVertexAttribute
+struct WGPUMeshVertexAttribute
 {
     Vector3f v;
     Vector2f t;
     Vector3f n;
 }
 
-GPUMesh gpuMesh(WGPUDeviceId device, Vector3f[] vertices, Vector2f[] texcoords, Vector3f[] normals, uint[] indices)
+WGPUMesh wgpuMesh(WGPUDeviceId device, Vector3f[] vertices, Vector2f[] texcoords, Vector3f[] normals, uint[] indices)
 {
-    GPUMeshVertexAttribute[] attributes = New!(GPUMeshVertexAttribute[])(vertices.length);
+    WGPUMeshVertexAttribute[] attributes = New!(WGPUMeshVertexAttribute[])(vertices.length);
 
     for (size_t i = 0; i < vertices.length; i++)
     {
@@ -67,7 +67,7 @@ GPUMesh gpuMesh(WGPUDeviceId device, Vector3f[] vertices, Vector2f[] texcoords, 
 
     WGPUBufferId attributeBuffer, indexBuffer;
 
-    size_t attributesSize = cast(size_t)attributes.length * GPUMeshVertexAttribute.sizeof;
+    size_t attributesSize = cast(size_t)attributes.length * WGPUMeshVertexAttribute.sizeof;
     WGPUBufferDescriptor attributeBufferDescriptor = WGPUBufferDescriptor(attributesSize, WGPUBufferUsage_VERTEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
     ubyte* attributeBufferMem;
     attributeBuffer = wgpu_device_create_buffer_mapped(device, &attributeBufferDescriptor, &attributeBufferMem);
@@ -83,7 +83,7 @@ GPUMesh gpuMesh(WGPUDeviceId device, Vector3f[] vertices, Vector2f[] texcoords, 
 
     Delete(attributes);
 
-    return GPUMesh(attributeBuffer, indexBuffer, cast(uint)vertices.length, cast(uint)indices.length);
+    return WGPUMesh(attributeBuffer, indexBuffer, cast(uint)vertices.length, cast(uint)indices.length);
 }
 
 struct ObjFace
@@ -93,7 +93,7 @@ struct ObjFace
     uint[3] n;
 }
 
-GPUMesh loadOBJ(WGPUDeviceId device, InputStream istrm)
+WGPUMesh loadOBJ(WGPUDeviceId device, InputStream istrm)
 {
     uint numVerts = 0;
     uint numNormals = 0;
@@ -362,7 +362,7 @@ GPUMesh loadOBJ(WGPUDeviceId device, InputStream istrm)
     if (tmpFaces.length)
         Delete(tmpFaces);
 
-    auto res = gpuMesh(device, vertices, texcoords, normals, indices);
+    auto res = wgpuMesh(device, vertices, texcoords, normals, indices);
 
     Delete(indices);
     Delete(vertices);

@@ -32,12 +32,16 @@ import std.stdio;
 import std.conv;
 import bindbc.sdl;
 import bindbc.wgpu;
+import dlib.core.ownership;
 import dlib.core.memory;
 import window;
+import event;
+import time;
 
-void quit(string message)
+void quit(string message = "")
 {
-    writeln(message);
+    if (message.length)
+        writeln(message);
     core.stdc.stdlib.exit(1);
 }
 
@@ -73,191 +77,54 @@ static ~this()
     writeln("OK");
 }
 
-class Application
+class Application: EventListener
 {
-    Window window;
+    protected:
+    Window _window;
+    Cadencer cadencer;
 
-    this(uint windowWidth, uint windowHeight)
+    public:
+    this(uint windowWidth, uint windowHeight, Owner owner = null)
     {
-        window = New!Window(windowWidth, windowHeight, "SDL Application");
+        _window = New!Window(windowWidth, windowHeight, "SDL Application");
+        eventManager = New!EventManager(_window.sdlWindow, windowWidth, windowHeight);
+        super(eventManager, owner);
+        cadencer = New!Cadencer(&onUpdate, 60, this);
     }
 
     ~this()
     {
-        Delete(window);
+        Delete(eventManager);
+        Delete(_window);
     }
-}
-
-class WGPUApplication: Application
-{
-    protected:
-    WGPUAdapterId _adapter;
-    WGPUDeviceId _device;
-    WGPUQueueId _queue;
-    WGPUSurfaceId _surface;
-    WGPUSwapChainId _swapchain;
-
-    public:
-    this(uint windowWidth, uint windowHeight)
+    
+    Window window()
     {
-        super(windowWidth, windowHeight);
-        init();
+        return _window;
     }
-
-    ~this()
+    
+    void run()
     {
-
-    }
-
-    protected:
-    void init()
-    {
-        writeln("Adapter...");
-        _adapter = requestAdapter();
-        writeln("OK");
-
-        writeln("Device...");
-        _device = requestDevice();
-        _queue = wgpu_device_get_queue(_device);
-        writeln("OK");
-
-        writeln("Surface...");
-        _surface = createSurface();
-        writeln("OK");
-
-        writeln("Swapchain...");
-        _swapchain = createSwapchain(window.width, window.height);
-        writeln("OK");
-    }
-
-    protected static extern(C) void requestAdapterCallback(WGPUAdapterId adapter, void* userdata)
-    {
-        *cast(WGPUAdapterId*)userdata = adapter;
-    }
-
-    WGPUAdapterId requestAdapter()
-    {
-        WGPURequestAdapterOptions reqAdaptersOptions =
+        Time t = Time(0.0, 0.0);
+        
+        while(eventManager.running)
         {
-            power_preference: WGPUPowerPreference.HighPerformance
-        };
-        WGPUAdapterId resAdapter;
-        wgpu_request_adapter_async(&reqAdaptersOptions, 2 | 4 | 8, &requestAdapterCallback, &resAdapter);
-        return resAdapter;
-    }
-
-    WGPUDeviceId requestDevice()
-    {
-        WGPUDeviceDescriptor deviceDescriptor =
-        {
-            extensions:
-            {
-                anisotropic_filtering: false
-            },
-            limits:
-            {
-                max_bind_groups: WGPUDEFAULT_BIND_GROUPS
-            }
-        };
-        return wgpu_adapter_request_device(_adapter, &deviceDescriptor);
-    }
-
-    WGPUSurfaceId createSurface()
-    {
-        SDL_SysWMinfo wmInfo = window.wmInfo;
-        writeln("Subsystem: ", wmInfo.subsystem);
-        WGPUSurfaceId surf;
-
-        version(Windows)
-        {
-            if (wmInfo.subsystem == SDL_SYSWM_WINDOWS)
-            {
-                auto win_hwnd = wmInfo.info.win.window;
-                auto win_hinstance = wmInfo.info.win.hinstance;
-                surf = wgpu_create_surface_from_windows_hwnd(win_hinstance, win_hwnd);
-            }
-            else
-            {
-                quit("Unsupported subsystem, sorry");
-            }
+            eventManager.update();
+            processEvents();
+            t.delta = eventManager.deltaTime;
+            t.elapsed += t.delta;
+            cadencer.update(t);
+            onRender();
         }
-        else version(linux)
-        {
-            // Needs test!
-            if (wmInfo.subsystem == SDL_SYSWM_X11)
-            {
-                auto x11_display = wmInfo.info.x11.display;
-                auto x11_window = wmInfo.info.x11.window;
-                surf = wgpu_create_surface_from_xlib(cast(void**)x11_display, x11_window);
-            }
-            else if (wmInfo.subsystem == SDL_SYSWM_WAYLAND)
-            {
-                auto wl_surface = wmInfo.info.wl.surface;
-                auto wl_display = wmInfo.info.wl.display;
-                surf = wgpu_create_surface_from_wayland(wl_surface, wl_display);
-            }
-            else
-            {
-                quit("Unsupported subsystem, sorry");
-            }
-        }
-        else version(OSX)
-        {
-            // Needs test!
-            SDL_Renderer* renderer = SDL_CreateRenderer(window.sdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
-            auto m_layer = SDL_RenderGetMetalLayer(renderer);
-            surf = wgpu_create_surface_from_metal_layer(m_layer);
-            SDL_DestroyRenderer(renderer);
-        }
-        else
-        {
-            quit("Unsupported system, sorry");
-        }
-
-        return surf;
     }
 
-    WGPUSwapChainId createSwapchain(uint w, uint h)
+    void onUpdate(Time t)
     {
-        WGPUSwapChainDescriptor sd = {
-            usage: WGPUTextureUsage_OUTPUT_ATTACHMENT,
-            format: WGPUTextureFormat.Bgra8Unorm,
-            width: w,
-            height: h,
-            present_mode: WGPUPresentMode.Vsync
-        };
-        return wgpu_device_create_swap_chain(device, surface, &sd);
+        // Override me
     }
-
-    public:
-    WGPUAdapterId adapter()
+    
+    void onRender()
     {
-        return _adapter;
-    }
-
-    WGPUDeviceId device()
-    {
-        return _device;
-    }
-
-    WGPUQueueId queue()
-    {
-        return _queue;
-    }
-
-    WGPUSurfaceId surface()
-    {
-        return _surface;
-    }
-
-    WGPUSwapChainId swapchain()
-    {
-        return _swapchain;
-    }
-
-    void resize(uint w, uint h)
-    {
-        window.querySize();
-        _swapchain = createSwapchain(w, h);
+        // Override me
     }
 }
