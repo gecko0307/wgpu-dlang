@@ -1,3 +1,3 @@
 @echo off
-tools\x64\glslangValidator shaders/cube.vert -V -o data/shaders/cube.vert.spv
-tools\x64\glslangValidator shaders/cube.frag -V -o data/shaders/cube.frag.spv
+tools\x64\glslangValidator shaders/pbr.vert -V -o data/shaders/pbr.vert.spv
+tools\x64\glslangValidator shaders/pbr.frag -V -o data/shaders/pbr.frag.spv

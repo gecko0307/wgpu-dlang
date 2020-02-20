@@ -88,11 +88,6 @@ class Application
     }
 }
 
-private extern(C) void requestAdapterCallback(WGPUAdapterId adapter, void* userdata)
-{
-    *cast(WGPUAdapterId*)userdata = adapter;
-}
-
 class WGPUApplication: Application
 {
     protected:
@@ -133,6 +128,11 @@ class WGPUApplication: Application
         writeln("Swapchain...");
         _swapchain = createSwapchain(window.width, window.height);
         writeln("OK");
+    }
+
+    protected static extern(C) void requestAdapterCallback(WGPUAdapterId adapter, void* userdata)
+    {
+        *cast(WGPUAdapterId*)userdata = adapter;
     }
 
     WGPUAdapterId requestAdapter()
