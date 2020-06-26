@@ -71,7 +71,6 @@ class WGPUApplication: Application
         
         writeln("Adapter...");
         _adapter = requestAdapter();
-        writeln(_adapter);
         writeln("OK");
 
         writeln("Device...");
