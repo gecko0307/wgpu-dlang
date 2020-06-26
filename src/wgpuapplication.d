@@ -63,17 +63,23 @@ class WGPUApplication: Application
 
     protected void __init()
     {
+        wgpu_set_log_level(WGPULogLevel.Debug);
+        
+        writeln("Surface...");
+        _surface = createSurface();
+        writeln("OK");
+        
         writeln("Adapter...");
         _adapter = requestAdapter();
+        writeln(_adapter);
         writeln("OK");
 
         writeln("Device...");
         _device = requestDevice();
-        _queue = wgpu_device_get_queue(_device);
         writeln("OK");
-
-        writeln("Surface...");
-        _surface = createSurface();
+        
+        writeln("Device queue...");
+        _queue = wgpu_device_get_default_queue(_device);
         writeln("OK");
 
         writeln("Swapchain...");
@@ -82,41 +88,39 @@ class WGPUApplication: Application
         
         writeln("Attachments...");
         _colorAttachment = createColorAttachment(_nextSwapchainOutput);
+        writeln("Color attachment OK");
         updateDepthStencilTexture(window.width, window.height);
+        writeln("Depth-stencil texture OK");
         _depthStencilAttachment = createDepthStencilAttachment(_depthStencilTextureView);
+        writeln("Depth-stencil attachment OK");
         writeln("OK");
     }
 
-    protected static extern(C) void __requestAdapterCallback(WGPUAdapterId adapter, void* userdata)
+    protected static extern(C) void __requestAdapterCallback(WGPUOption_AdapterId id, void* userdata)
     {
-        *cast(WGPUAdapterId*)userdata = adapter;
+        *cast(WGPUOption_AdapterId*)userdata = id;
     }
 
     WGPUAdapterId requestAdapter()
     {
         WGPURequestAdapterOptions reqAdaptersOptions =
         {
-            power_preference: WGPUPowerPreference.HighPerformance
+            power_preference: WGPUPowerPreference.HighPerformance,
+            compatible_surface: _surface
         };
         WGPUAdapterId resAdapter;
-        wgpu_request_adapter_async(&reqAdaptersOptions, 2 | 4 | 8, &__requestAdapterCallback, &resAdapter);
+        wgpu_request_adapter_async(&reqAdaptersOptions, 2 | 4 | 8, 1, &__requestAdapterCallback, &resAdapter);
         return resAdapter;
     }
 
     WGPUDeviceId requestDevice()
     {
-        WGPUDeviceDescriptor deviceDescriptor =
+        WGPUCLimits limits = 
         {
-            extensions:
-            {
-                anisotropic_filtering: false
-            },
-            limits:
-            {
-                max_bind_groups: WGPUDEFAULT_BIND_GROUPS
-            }
+            max_bind_groups: 1 //WGPUDEFAULT_BIND_GROUPS
         };
-        return wgpu_adapter_request_device(_adapter, &deviceDescriptor);
+        
+        return wgpu_adapter_request_device(_adapter, 0, &limits, "trace");
     }
 
     WGPUSurfaceId createSurface()
@@ -181,7 +185,7 @@ class WGPUApplication: Application
             format: WGPUTextureFormat.Bgra8Unorm,
             width: w,
             height: h,
-            present_mode: WGPUPresentMode.Vsync
+            present_mode: WGPUPresentMode.Fifo
         };
         return wgpu_device_create_swap_chain(device, surface, &sd);
     }
@@ -202,8 +206,9 @@ class WGPUApplication: Application
     {
         WGPUTextureDescriptor depthTextureDescriptor =
         {
+            label: "depthTextureDescriptor0",
             size: WGPUExtent3d(width, height, 1),
-            array_layer_count: 1,
+            //array_layer_count: 1,
             mip_level_count: 1,
             sample_count: 1,
             dimension: WGPUTextureDimension.D2,
@@ -217,6 +222,7 @@ class WGPUApplication: Application
     {
         WGPUTextureViewDescriptor viewDescriptor =
         {
+            label: "depthTextureViewDescriptor0",
             format: WGPUTextureFormat.Depth24PlusStencil8,
             dimension: WGPUTextureViewDimension.D2,
             aspect: WGPUTextureAspect.DepthOnly,
@@ -242,7 +248,10 @@ class WGPUApplication: Application
             wgpu_texture_view_destroy(_depthStencilTextureView);
         }
 
+        writeln("Depth-stencil texture...");
         _depthStencilTexture = createDepthStencilTexture(width, height);
+        
+        writeln("Depth-stencil texture view...");
         _depthStencilTextureView = createDepthStencilTextureView(_depthStencilTexture);
     }
     

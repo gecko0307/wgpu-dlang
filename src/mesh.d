@@ -68,20 +68,25 @@ WGPUMesh wgpuMesh(WGPUDeviceId device, Vector3f[] vertices, Vector2f[] texcoords
     WGPUBufferId attributeBuffer, indexBuffer;
 
     size_t attributesSize = cast(size_t)attributes.length * WGPUMeshVertexAttribute.sizeof;
-    WGPUBufferDescriptor attributeBufferDescriptor = WGPUBufferDescriptor(attributesSize, WGPUBufferUsage_VERTEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
-    ubyte* attributeBufferMem;
-    attributeBuffer = wgpu_device_create_buffer_mapped(device, &attributeBufferDescriptor, &attributeBufferMem);
-    memcpy(attributeBufferMem, attributes.ptr, attributesSize);
-    wgpu_buffer_unmap(attributeBuffer);
+    WGPUBufferDescriptor attributeBufferDescriptor = WGPUBufferDescriptor("AttributeBuffer1", attributesSize, WGPUBufferUsage_VERTEX | WGPUBufferUsage_COPY_SRC | WGPUBufferUsage_COPY_DST);
+    //ubyte* attributeBufferMem;
+    //attributeBuffer = wgpu_device_create_buffer_mapped(device, &attributeBufferDescriptor, &attributeBufferMem);
+    //memcpy(attributeBufferMem, attributes.ptr, attributesSize);
+    //wgpu_buffer_unmap(attributeBuffer);
+    attributeBuffer = wgpu_device_create_buffer(device, &attributeBufferDescriptor);
+    auto queue = wgpu_device_get_default_queue(device);
+    wgpu_queue_write_buffer(queue, attributeBuffer, 0, cast(ubyte*)attributes.ptr, attributesSize);
 
     size_t indicesSize = cast(size_t)indices.length * uint.sizeof;
-    WGPUBufferDescriptor indexBufferDescriptor = WGPUBufferDescriptor(indicesSize, WGPUBufferUsage_INDEX | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE);
-    ubyte* indexBufferMem;
-    indexBuffer = wgpu_device_create_buffer_mapped(device, &indexBufferDescriptor, &indexBufferMem);
-    memcpy(indexBufferMem, indices.ptr, indicesSize);
-    wgpu_buffer_unmap(indexBuffer);
+    WGPUBufferDescriptor indexBufferDescriptor = WGPUBufferDescriptor("IndexBuffer1", indicesSize, WGPUBufferUsage_INDEX | WGPUBufferUsage_COPY_SRC | WGPUBufferUsage_COPY_DST);
+    //ubyte* indexBufferMem;
+    //indexBuffer = wgpu_device_create_buffer_mapped(device, &indexBufferDescriptor, &indexBufferMem);
+    //memcpy(indexBufferMem, indices.ptr, indicesSize);
+    //wgpu_buffer_unmap(indexBuffer);
+    indexBuffer = wgpu_device_create_buffer(device, &indexBufferDescriptor);
+    wgpu_queue_write_buffer(queue, indexBuffer, 0, cast(ubyte*)indices.ptr, indicesSize);
 
-    Delete(attributes);
+    //Delete(attributes);
 
     return WGPUMesh(attributeBuffer, indexBuffer, cast(uint)vertices.length, cast(uint)indices.length);
 }

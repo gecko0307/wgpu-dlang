@@ -29,10 +29,14 @@ module texture;
 
 import core.stdc.string;
 import std.stdio;
+import std.string;
+import std.conv;
 import bindbc.wgpu;
 import dlib.core.memory;
 import dlib.core.ownership;
 import dlib.image.image;
+
+__gshared uint numTextures = 0;
 
 // TODO: support more image formats 
 class Texture: Owner
@@ -56,10 +60,12 @@ class Texture: Owner
         this.width = width;
         this.height = height;
         
+        writeln("Create texture...");
         WGPUTextureDescriptor textureDescriptor =
         {
-            size: WGPUExtent3d(width, height, 1),
-            array_layer_count: numLayers,
+            label: toStringz("texture" ~ numTextures.to!string),
+            size: WGPUExtent3d(width, height, numLayers),
+            //array_layer_count: numLayers,
             mip_level_count: 1,
             sample_count: 1,
             dimension: WGPUTextureDimension.D2,
@@ -67,9 +73,12 @@ class Texture: Owner
             usage: WGPUTextureUsage_SAMPLED | WGPUTextureUsage_COPY_DST
         };
         id = wgpu_device_create_texture(device, &textureDescriptor);
+        writeln("OK");
 
+        writeln("Create texture view...");
         WGPUTextureViewDescriptor textureViewDescriptor =
         {
+            label: toStringz("textureView" ~ numTextures.to!string),
             format: WGPUTextureFormat.Rgba8Unorm,
             dimension: WGPUTextureViewDimension.D2Array,
             aspect: WGPUTextureAspect.All,
@@ -79,6 +88,9 @@ class Texture: Owner
             array_layer_count: numLayers
         };
         viewId = wgpu_texture_create_view(id, &textureViewDescriptor);
+        writeln("OK");
+        
+        numTextures++;
     }
     
     void layerFromImage(SuperImage img, uint layer)
@@ -95,34 +107,43 @@ class Texture: Owner
             return;
         }
         
-        WGPUBufferDescriptor texBufferDescriptor = WGPUBufferDescriptor(img.data.length,
-            WGPUBufferUsage_STORAGE | WGPUBufferUsage_MAP_READ | WGPUBufferUsage_MAP_WRITE | WGPUBufferUsage_COPY_SRC);
-        ubyte* texBufferMem;
-        WGPUBufferId textureBuffer = wgpu_device_create_buffer_mapped(device, &texBufferDescriptor, &texBufferMem);
-        memcpy(texBufferMem, img.data.ptr, img.data.length);
-        wgpu_buffer_unmap(textureBuffer);
+        writeln("Create buffer...");
+        WGPUBufferDescriptor texBufferDescriptor = WGPUBufferDescriptor("Texture1", img.data.length,
+            WGPUBufferUsage_STORAGE | WGPUBufferUsage_COPY_SRC | WGPUBufferUsage_COPY_DST);
+        WGPUBufferId textureBuffer = wgpu_device_create_buffer(device, &texBufferDescriptor);
+        wgpu_queue_write_buffer(queue, textureBuffer, 0, cast(ubyte*)img.data.ptr, img.data.length);
+    
+        writeln("OK");
        
-        WGPUCommandEncoderDescriptor texCopyDescriptor = WGPUCommandEncoderDescriptor(0);
+        writeln("Command encoder for copying...");
+        WGPUCommandEncoderDescriptor texCopyDescriptor = WGPUCommandEncoderDescriptor("commandEncDescriptor_texture_copy");
         WGPUCommandEncoderId texCopyCmdEncoder = wgpu_device_create_command_encoder(device, &texCopyDescriptor);
+        writeln("OK");
         
+        writeln("Copy data to texture...");
         WGPUBufferCopyView srcBufferCopyView =
         {
             buffer: textureBuffer,
-            offset: 0,
-            row_pitch: width * 4,
-            image_height: height
+            layout:
+            {
+                offset: 0,
+                bytes_per_row: width * 4,
+                rows_per_image: height
+            }
         };
-        
         WGPUTextureCopyView dstTextureCopyView =
         {
             texture: id,
             mip_level: 0,
-            array_layer: layer,
-            origin: WGPUOrigin3d(0, 0, 0)
+            //array_layer: layer,
+            origin: WGPUOrigin3d(0, 0, layer)
         };
-        
         wgpu_command_encoder_copy_buffer_to_texture(texCopyCmdEncoder, &srcBufferCopyView, &dstTextureCopyView, WGPUExtent3d(width, height, 1));
+        writeln("OK");
+        
+        writeln("Submit...");
         WGPUCommandBufferId texCopyCmdBuf = wgpu_command_encoder_finish(texCopyCmdEncoder, null);
         wgpu_queue_submit(queue, &texCopyCmdBuf, 1);
+        writeln("OK");
     }
 }
