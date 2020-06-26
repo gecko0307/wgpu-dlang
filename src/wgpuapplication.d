@@ -208,7 +208,6 @@ class WGPUApplication: Application
         {
             label: "depthTextureDescriptor0",
             size: WGPUExtent3d(width, height, 1),
-            //array_layer_count: 1,
             mip_level_count: 1,
             sample_count: 1,
             dimension: WGPUTextureDimension.D2,

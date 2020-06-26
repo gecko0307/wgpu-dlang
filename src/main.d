@@ -351,7 +351,7 @@ class MyApplication: WGPUApplication
     void updateUniforms()
     {
         uniforms.modelViewMatrix =
-            //scaleMatrix(Vector3f(1, -1, 1)) * // Flip Y for OpenGL compatibility
+            //scaleMatrix(Vector3f(1, -1, 1)) * // Flip Y for OpenGL compatibility - no longer needed?
             translationMatrix(-cameraPosition) *
             rotationMatrix(Axis.y, degtorad(angle)) *
             scaleMatrix(Vector3f(1, 1, 1));
