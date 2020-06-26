@@ -104,7 +104,7 @@ void main()
     tangentNormal.y *= -1.0;
     eyeNormalNorm = normalize(tangentToEye * tangentNormal);
 
-    const vec3 lightEye = normalize(vec3(1.0, -1.0, 1.0));
+    const vec3 lightEye = normalize(vec3(1.0, 1.0, 1.0));
 
     vec3 albedo = toLinear(texture(sampler2DArray(myTexture, mySampler), vec3(shiftedTexcoord, 0)).rgb);
 
