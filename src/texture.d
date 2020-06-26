@@ -65,7 +65,6 @@ class Texture: Owner
         {
             label: toStringz("texture" ~ numTextures.to!string),
             size: WGPUExtent3d(width, height, numLayers),
-            //array_layer_count: numLayers,
             mip_level_count: 1,
             sample_count: 1,
             dimension: WGPUTextureDimension.D2,
@@ -135,7 +134,6 @@ class Texture: Owner
         {
             texture: id,
             mip_level: 0,
-            //array_layer: layer,
             origin: WGPUOrigin3d(0, 0, layer)
         };
         wgpu_command_encoder_copy_buffer_to_texture(texCopyCmdEncoder, &srcBufferCopyView, &dstTextureCopyView, WGPUExtent3d(width, height, 1));
