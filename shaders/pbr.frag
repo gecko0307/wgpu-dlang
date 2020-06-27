@@ -7,14 +7,9 @@ const float invPI = 1.0 / PI;
 layout(set = 0, binding = 1) uniform sampler mySampler;
 layout(set = 0, binding = 2) uniform texture2DArray myTexture;
 
-struct Inputs
-{
-    vec3 eyePosition;
-    vec3 eyeNormal;
-    vec2 texcoord;
-};
-
-layout(location = 0) in Inputs inputs;
+layout(location = 0) in vec3 eyePosition;
+layout(location = 1) in vec3 eyeNormal;
+layout(location = 2) in vec2 texcoord;
 
 layout(location = 0) out vec4 outColor;
 
@@ -93,15 +88,14 @@ vec3 toGamma(vec3 v)
 
 void main()
 {
-    vec3 viewDirection = normalize(-inputs.eyePosition);
-    vec3 eyeNormalNorm = normalize(inputs.eyeNormal);
-    mat3 tangentToEye = cotangentFrame(eyeNormalNorm, inputs.eyePosition, inputs.texcoord);
+    vec3 viewDirection = normalize(-eyePosition);
+    vec3 eyeNormalNorm = normalize(eyeNormal);
+    mat3 tangentToEye = cotangentFrame(eyeNormalNorm, eyePosition, texcoord);
     vec3 viewDirectionTangent = normalize(viewDirection * tangentToEye);
 
-    vec2 shiftedTexcoord = inputs.texcoord;
+    vec2 shiftedTexcoord = texcoord;
     vec3 tangentNormal = texture(sampler2DArray(myTexture, mySampler), vec3(shiftedTexcoord, 1)).xyz;
     tangentNormal = normalize(tangentNormal * 2.0 - 1.0);
-    tangentNormal.y *= -1.0;
     eyeNormalNorm = normalize(tangentToEye * tangentNormal);
 
     const vec3 lightEye = normalize(vec3(1.0, 1.0, 1.0));
