@@ -28,6 +28,7 @@ DEALINGS IN THE SOFTWARE.
 module wgpuapplication;
 
 import std.stdio;
+import std.conv;
 import dlib.core.ownership;
 import dlib.core.memory;
 import bindbc.sdl;
@@ -109,6 +110,9 @@ class WGPUApplication: Application
         };
         WGPUAdapterId resAdapter;
         wgpu_request_adapter_async(&reqAdaptersOptions, 2 | 4 | 8, 1, &__requestAdapterCallback, &resAdapter);
+        WGPUCAdapterInfo adapterInfo;
+        wgpu_adapter_get_info(resAdapter, &adapterInfo);
+        writeln("Adapter backend: ", adapterInfo.backend);
         return resAdapter;
     }
 
