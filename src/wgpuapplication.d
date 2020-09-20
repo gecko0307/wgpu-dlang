@@ -123,7 +123,7 @@ class WGPUApplication: Application
             max_bind_groups: 1 //WGPUDEFAULT_BIND_GROUPS
         };
         
-        return wgpu_adapter_request_device(_adapter, 0, &limits, "trace");
+        return wgpu_adapter_request_device(_adapter, WGPUFeatures.NONE, &limits, true, "trace");
     }
 
     WGPUSurfaceId createSurface()
@@ -184,7 +184,7 @@ class WGPUApplication: Application
     WGPUSwapChainId createSwapchain(uint w, uint h)
     {
         WGPUSwapChainDescriptor sd = {
-            usage: WGPUTextureUsage_OUTPUT_ATTACHMENT,
+            usage: WGPUTextureUsage.OUTPUT_ATTACHMENT,
             format: WGPUTextureFormat.Bgra8Unorm,
             width: w,
             height: h,
@@ -195,13 +195,20 @@ class WGPUApplication: Application
     
     WGPURenderPassColorAttachmentDescriptor createColorAttachment(WGPUSwapChainOutput swapchainOutput)
     {
+        WGPUPassChannel_Color channel = {
+            load_op: WGPULoadOp.Clear,
+            store_op: WGPUStoreOp.Store,
+            clear_value: WGPUColor(0.5, 0.5, 0.5, 1.0),
+            read_only: false
+        };
+        
         WGPURenderPassColorAttachmentDescriptor colorAttachment =
         {
             attachment: swapchainOutput.view_id,
-            load_op: WGPULoadOp.Clear,
-            store_op: WGPUStoreOp.Store,
-            clear_color: WGPUColor(0.5, 0.5, 0.5, 1.0)
+            resolve_target: 0,
+            channel: channel
         };
+        
         return colorAttachment;
     }
     
@@ -215,7 +222,7 @@ class WGPUApplication: Application
             sample_count: 1,
             dimension: WGPUTextureDimension.D2,
             format: WGPUTextureFormat.Depth24PlusStencil8,
-            usage: WGPUTextureUsage_OUTPUT_ATTACHMENT
+            usage: WGPUTextureUsage.OUTPUT_ATTACHMENT
         };
         return wgpu_device_create_texture(device, &depthTextureDescriptor);
     }
@@ -259,14 +266,24 @@ class WGPUApplication: Application
     
     WGPURenderPassDepthStencilAttachmentDescriptor createDepthStencilAttachment(WGPUTextureViewId view)
     {
+        WGPUPassChannel_f32 depthChannel = {
+            load_op: WGPULoadOp.Clear,
+            store_op: WGPUStoreOp.Store,
+            clear_value: 1.0f,
+            read_only: false
+        };
+        
+        WGPUPassChannel_u32 stencilChannel = {
+            load_op: WGPULoadOp.Clear,
+            store_op: WGPUStoreOp.Store,
+            clear_value: 0,
+            read_only: false
+        };
+        
         WGPURenderPassDepthStencilAttachmentDescriptor attachment = {
             attachment: view,
-            depth_load_op: WGPULoadOp.Clear,
-            depth_store_op: WGPUStoreOp.Store,
-            clear_depth: 1.0f,
-            stencil_load_op: WGPULoadOp.Clear,
-            stencil_store_op: WGPUStoreOp.Store,
-            clear_stencil: 0
+            depth: depthChannel,
+            stencil: stencilChannel
         };
         return attachment;
     }

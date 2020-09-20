@@ -104,6 +104,7 @@ class MyApplication: WGPUApplication
         writeln("Samplers...");
         WGPUSamplerDescriptor samplerDescriptor =
         {
+            next_in_chain: null,
             label: "samplerDescriptor0",
             address_mode_u: WGPUAddressMode.Repeat,
             address_mode_v: WGPUAddressMode.Repeat,
@@ -113,39 +114,47 @@ class MyApplication: WGPUApplication
             mipmap_filter: WGPUFilterMode.Linear,
             lod_min_clamp: 0.0f,
             lod_max_clamp: 0.0f,
-            compare: WGPUCompareFunction.Always
+            compare: WGPUCompareFunction.Undefined
         };
         WGPUSamplerId sampler = wgpu_device_create_sampler(device, &samplerDescriptor);
         writeln("OK");
 
         // Bind group
-        writeln("Bind group...");
+        writeln("Bind group layout...");
         WGPUBindGroupLayoutEntry bindingUniforms =
         {
             binding: 0,
-            visibility: WGPUShaderStage_VERTEX | WGPUShaderStage_FRAGMENT,
+            visibility: WGPUShaderStage.VERTEX | WGPUShaderStage.FRAGMENT,
             ty: WGPUBindingType.UniformBuffer,
-            view_dimension: WGPUTextureViewDimension.D1,
+            has_dynamic_offset: false,
+            min_buffer_binding_size: uniforms.sizeof,
             multisampled: false,
-            has_dynamic_offset: false
-        };
-        WGPUBindGroupLayoutEntry bindingSampler =
-        {
-            binding: 1,
-            visibility: WGPUShaderStage_FRAGMENT,
-            ty: WGPUBindingType.Sampler,
-            view_dimension: WGPUTextureViewDimension.D2Array,
-            multisampled: false,
-            has_dynamic_offset: false
         };
         WGPUBindGroupLayoutEntry bindingTexture =
         {
-            binding: 2,
-            visibility: WGPUShaderStage_FRAGMENT,
+            binding: 1,
+            visibility: WGPUShaderStage.FRAGMENT,
             ty: WGPUBindingType.SampledTexture,
-            view_dimension: WGPUTextureViewDimension.D2Array,
+            has_dynamic_offset: false,
+            min_buffer_binding_size: 0,
             multisampled: false,
-            has_dynamic_offset: false
+            view_dimension: WGPUTextureViewDimension.D2Array,
+            texture_component_type: WGPUTextureComponentType.Float,
+            storage_texture_format: WGPUTextureFormat.Rgba8Unorm,
+            count: 0
+        };
+        WGPUBindGroupLayoutEntry bindingSampler =
+        {
+            binding: 2,
+            visibility: WGPUShaderStage.FRAGMENT,
+            ty: WGPUBindingType.Sampler,
+            has_dynamic_offset: false,
+            min_buffer_binding_size: 0,
+            multisampled: false,
+            view_dimension: WGPUTextureViewDimension.D2Array,
+            texture_component_type: WGPUTextureComponentType.Float,
+            storage_texture_format: WGPUTextureFormat.Rgba8Unorm,
+            count: 0
         };
 
         WGPUBindGroupLayoutEntry[3] bindGroupLayoutBindings =
@@ -154,7 +163,9 @@ class MyApplication: WGPUApplication
         ];
         WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = WGPUBindGroupLayoutDescriptor("Main", bindGroupLayoutBindings.ptr, bindGroupLayoutBindings.length);
         WGPUBindGroupLayoutId uniformsBindGroupLayout = wgpu_device_create_bind_group_layout(device, &bindGroupLayoutDescriptor);
-
+        writeln("OK");
+        
+        writeln("Bind group...");
         float aspectRatio = cast(float)window.width / cast(float)window.height;
 
         uniforms.modelViewMatrix = Matrix4x4f.identity;
@@ -162,30 +173,19 @@ class MyApplication: WGPUApplication
         uniforms.projectionMatrix = perspectiveMatrix(fov, aspectRatio, 0.01f, 1000.0f);
 
         uniformBufferDescriptor = WGPUBufferDescriptor("UniformBuffer", uniforms.sizeof,
-            WGPUBufferUsage_UNIFORM |
-            WGPUBufferUsage_COPY_SRC |
-            WGPUBufferUsage_COPY_DST);
+            WGPUBufferUsage.UNIFORM |
+            WGPUBufferUsage.COPY_SRC |
+            WGPUBufferUsage.COPY_DST);
 
         uniformBuffer = wgpu_device_create_buffer(device, &uniformBufferDescriptor);
 
-        WGPUBindingResource bufBindingResource;
-        bufBindingResource.tag = WGPUBindingResource_Tag.Buffer;
-        bufBindingResource.buffer = WGPUBindingResource_WGPUBuffer_Body(WGPUBufferBinding(uniformBuffer, 0, uniforms.sizeof));
-
-        WGPUBindingResource samplerBindingResource;
-        samplerBindingResource.tag = WGPUBindingResource_Tag.Sampler;
-        samplerBindingResource.sampler = WGPUBindingResource_WGPUSampler_Body(sampler);
-
-        WGPUBindingResource textureBindingResource;
-        textureBindingResource.tag = WGPUBindingResource_Tag.TextureView;
-        textureBindingResource.texture_view = WGPUBindingResource_WGPUTextureView_Body(texture.viewId);
-
         WGPUBindGroupEntry[3] uniformBindGroupEntries =
         [
-            WGPUBindGroupEntry(0, bufBindingResource),
-            WGPUBindGroupEntry(1, samplerBindingResource),
-            WGPUBindGroupEntry(2, textureBindingResource)
+            WGPUBindGroupEntry(0, uniformBuffer, 0, uniforms.sizeof, 0,       0),
+            WGPUBindGroupEntry(1, 0,             0, 0,               0,       texture.viewId),
+            WGPUBindGroupEntry(2, 0,             0, 0,               sampler, 0)
         ];
+        
         WGPUBindGroupDescriptor bindGroupDescriptor = WGPUBindGroupDescriptor("Main", uniformsBindGroupLayout, uniformBindGroupEntries.ptr, uniformBindGroupEntries.length);
         bindGroup = wgpu_device_create_bind_group(device, &bindGroupDescriptor);
         writeln("OK");
@@ -195,11 +195,11 @@ class MyApplication: WGPUApplication
         uint[] vs = cast(uint[])std.file.read("data/shaders/pbr.vert.spv");
         uint[] fs = cast(uint[])std.file.read("data/shaders/pbr.frag.spv");
 
-        WGPUShaderModuleDescriptor vsDescriptor = WGPUShaderModuleDescriptor(WGPUU32Array(vs.ptr, vs.length));
-        WGPUShaderModuleId vertexShader = wgpu_device_create_shader_module(device, &vsDescriptor);
+        //WGPUShaderModuleDescriptor vsDescriptor = WGPUShaderModuleDescriptor(WGPUU32Array(vs.ptr, vs.length));
+        WGPUShaderModuleId vertexShader = wgpu_device_create_shader_module(device, WGPUShaderSource(vs.ptr, vs.length));
 
-        WGPUShaderModuleDescriptor fsDescriptor = WGPUShaderModuleDescriptor(WGPUU32Array(fs.ptr, fs.length));
-        WGPUShaderModuleId fragmentShader = wgpu_device_create_shader_module(device, &fsDescriptor);
+        //WGPUShaderModuleDescriptor fsDescriptor = WGPUShaderModuleDescriptor(WGPUU32Array(fs.ptr, fs.length));
+        WGPUShaderModuleId fragmentShader = wgpu_device_create_shader_module(device, WGPUShaderSource(fs.ptr, fs.length));
 
         WGPUPipelineLayoutDescriptor pipelineLayoutDescriptor = WGPUPipelineLayoutDescriptor(&uniformsBindGroupLayout, 1);
         WGPUPipelineLayoutId pipelineLayout = wgpu_device_create_pipeline_layout(device, &pipelineLayoutDescriptor);
@@ -242,7 +242,7 @@ class MyApplication: WGPUApplication
                 dst_factor: WGPUBlendFactor.Zero,
                 operation: WGPUBlendOperation.Add
             },
-            write_mask: WGPUColorWrite_ALL
+            write_mask: WGPUColorWrite.ALL
         };
 
         size_t vertexSize = float.sizeof * 3;
@@ -373,7 +373,7 @@ class MyApplication: WGPUApplication
             color_attachments_length: 1,
             depth_stencil_attachment: &_depthStencilAttachment
         };
-        WGPURenderPassId pass = wgpu_command_encoder_begin_render_pass(cmdEncoder, &renderPassDescriptor);
+        WGPURenderPass* pass = wgpu_command_encoder_begin_render_pass(cmdEncoder, &renderPassDescriptor);
 
         wgpu_render_pass_set_pipeline(pass, renderPipeline);
         wgpu_render_pass_set_bind_group(pass, 0, bindGroup, null, 0);

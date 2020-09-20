@@ -69,7 +69,7 @@ class Texture: Owner
             sample_count: 1,
             dimension: WGPUTextureDimension.D2,
             format: WGPUTextureFormat.Rgba8Unorm,
-            usage: WGPUTextureUsage_SAMPLED | WGPUTextureUsage_COPY_DST
+            usage: WGPUTextureUsage.SAMPLED | WGPUTextureUsage.COPY_DST
         };
         id = wgpu_device_create_texture(device, &textureDescriptor);
         writeln("OK");
@@ -108,7 +108,7 @@ class Texture: Owner
         
         writeln("Create buffer...");
         WGPUBufferDescriptor texBufferDescriptor = WGPUBufferDescriptor("Texture1", img.data.length,
-            WGPUBufferUsage_STORAGE | WGPUBufferUsage_COPY_SRC | WGPUBufferUsage_COPY_DST);
+            WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_SRC | WGPUBufferUsage.COPY_DST);
         WGPUBufferId textureBuffer = wgpu_device_create_buffer(device, &texBufferDescriptor);
         wgpu_queue_write_buffer(queue, textureBuffer, 0, cast(ubyte*)img.data.ptr, img.data.length);
     
