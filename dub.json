@@ -8,9 +8,9 @@
     ],
     
     "dependencies": {
-        "bindbc-sdl": "~>0.13.0",
-        "bindbc-wgpu": "~master",
-        "dlib": "~>0.17.0"
+        "bindbc-sdl": "~>0.19.1",
+        "bindbc-wgpu": "~>0.1.0-alpha9",
+        "dlib": "~>0.19.2"
     },
     
     "versions": [
