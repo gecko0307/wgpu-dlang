@@ -9,7 +9,7 @@
     
     "dependencies": {
         "bindbc-sdl": "~>0.19.1",
-        "bindbc-wgpu": "~>0.1.0-alpha9",
+        "bindbc-wgpu": "0.1.0-alpha.10",
         "dlib": "~>0.19.2"
     },
     
