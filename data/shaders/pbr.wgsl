@@ -68,6 +68,17 @@ fn toGamma(v: vec3<f32>) -> vec3<f32>
 
 fn cotangentFrame(N: vec3<f32>, p: vec3<f32>, uv: vec2<f32>) -> mat3x3<f32>
 {
+    let pos_dx = dpdx(p);
+    let pos_dy = dpdy(p);
+    let st1 = dpdx(uv);
+    let st2 = dpdy(uv);
+    var T = (st2.y * pos_dx - st1.y * pos_dy) / (st1.x * st2.y - st2.x * st1.y);
+    T = normalize(T - N * dot(N, T));
+    let B = normalize(cross(N, T));
+    return mat3x3<f32>(T, B, N);
+    
+    /*
+    // Old version
     let dp1 = dpdx(p);
     let dp2 = dpdy(p);
     let duv1 = dpdx(uv);
@@ -78,6 +89,7 @@ fn cotangentFrame(N: vec3<f32>, p: vec3<f32>, uv: vec2<f32>) -> mat3x3<f32>
     let B = dp2perp * duv1.y + dp1perp * duv2.y;
     let invmax = inverseSqrt(max(dot(T, T), dot(B, B)));
     return mat3x3<f32>(T * invmax, B * invmax, N);
+    */
 }
 
 fn distributionGGX(N: vec3<f32>, H: vec3<f32>, roughness: f32) -> f32
@@ -135,7 +147,7 @@ fn fs_main(input: FragmentInput) -> @location(0) vec4<f32>
     
     var tangentNormal = textureSample(normalTexture, normalSampler, input.texcoord, 0).rgb;
     tangentNormal = normalize(tangentNormal * 2.0 - 1.0);
-    tangentNormal.x = -tangentNormal.x;
+    tangentNormal.y = -tangentNormal.y;
     N = normalize(tangentToEye * tangentNormal);
     
     let L = normalize(vec3<f32>(0.0, 0.0, 1.0));
