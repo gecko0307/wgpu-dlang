@@ -39,7 +39,7 @@ struct VertexInput
 struct VertexOutput
 {
     @builtin(position) position: vec4<f32>,
-    @location(0) positionNormalized: vec4<f32>,
+    @location(0) positionEye: vec4<f32>,
     @location(1) texcoord: vec2<f32>,
     @location(2) normal: vec4<f32>
 };
@@ -48,9 +48,9 @@ struct VertexOutput
 fn vs_main(input: VertexInput) -> VertexOutput
 {
     var output: VertexOutput;
-    let pos = renderer.projectionMatrix * entity.modelViewMatrix * vec4<f32>(input.position, 1.0);
-    output.position = pos;
-    output.positionNormalized = vec4<f32>(pos.xyz * 0.5 + 0.5, 1.0);
+    let positionEye = entity.modelViewMatrix * vec4<f32>(input.position, 1.0);
+    output.position = renderer.projectionMatrix * positionEye;
+    output.positionEye = positionEye;
     output.texcoord = input.texcoord;
     output.normal = entity.normalMatrix * vec4<f32>(input.normal, 0.0);
     return output;
@@ -130,14 +130,16 @@ fn fs_main(input: FragmentInput) -> @location(0) vec4<f32>
     let invPI: f32 = 1.0 / PI;
     
     var N = normalize(input.normal.xyz);
-    let E = normalize(input.position.xyz);
+    let E = normalize(-input.position.xyz);
     let tangentToEye = cotangentFrame(N, input.position.xyz, input.texcoord);
     
     var tangentNormal = textureSample(normalTexture, normalSampler, input.texcoord, 0).rgb;
     tangentNormal = normalize(tangentNormal * 2.0 - 1.0);
+    tangentNormal.x = -tangentNormal.x;
     N = normalize(tangentToEye * tangentNormal);
     
     let L = normalize(vec3<f32>(0.0, 0.0, 1.0));
+    let lightEnergy = 5.0;
     
     let albedo = toLinear(textureSample(baseColorTexture, baseColorSampler, input.texcoord, 0).rgb);
     let roughness = textureSample(roughnessMetallicTexture, roughnessMetallicSampler, input.texcoord, 0).g;
@@ -152,7 +154,7 @@ fn fs_main(input: FragmentInput) -> @location(0) vec4<f32>
     let kD = (1.0 - F) * (1.0 - metallic);
     let specular = (NDF * G * F) / max(4.0 * max(dot(N, E), 0.0) * NL, 0.001);
     let ambient = toLinear(vec3<f32>(0.05));
-    let radiance = albedo * ambient + (kD * albedo * invPI + specular) * NL;
+    let radiance = albedo * ambient + (kD * albedo * invPI + specular) * NL * lightEnergy;
     
     return vec4<f32>(toGamma(radiance), 1.0);
 }
