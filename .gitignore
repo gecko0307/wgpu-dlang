@@ -1,9 +1,18 @@
-*.a
-*.lib
-*.exe
+# Compiled Object files
+*.o
+*.obj
 
-# Backup files
-*~
+# Compiled Static libraries
+/*.a
+/*.lib
+
+# Executables
+/*.exe
+
+# Libraries
+/*.dll
+/*.so
+/*.dylib
 
 # Dub files
 .dub
@@ -13,9 +22,15 @@ dub.selections.json
 __test__library__
 tests
 
-# spv files
-*.spv
+# Documentation
+docs/
+docs.json
 
-# Deploy files
-SDL2.dll
-wgpu_native.dll
+# Coverage files
+*.lst
+
+# Debug info
+*.pdb
+
+# Backup files
+*~

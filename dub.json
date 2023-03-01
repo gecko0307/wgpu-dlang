@@ -1,45 +1,47 @@
 {
     "name": "main",
-    "description": "",
-    "homepage": "",
-    "license": "Boost",
+    "description": "Dagon over WebGPU",
     "authors": [
         "Timur Gafarov"
     ],
+    "copyright": "Copyright © 2021, Timur Gafarov",
+    "license": "BSL-1.0",
     
     "dependencies": {
-        "bindbc-sdl": "~>0.19.1",
-        "bindbc-wgpu": "0.1.0-alpha.10",
-        "dlib": "~>0.19.2"
+        "dlib": "~>1.1.0",
+        "bindbc-wgpu": "~>0.15.0",
+        "bindbc-sdl": "~>1.0.1"
     },
     
-    "versions": [
-        "SDL_2010"
-    ],
-
     "importPaths": [
-        "src"
+        "src",
+        "thirdparty/stb-2.0.1/source"
     ],
-
+    
+    "sourcePaths": [
+        "src",
+        "thirdparty/stb-2.0.1/source"
+    ],
+    
+    "versions": [
+        "SDL_2014"
+    ],
+    
     "buildRequirements":[
         "allowWarnings"
     ],
-
-    "sourcePaths": ["src"],
-    "mainSourceFile": "src/main.d",
-
-    "configurations": [
-        {
-            "name": "application",
-            "targetType": "executable"
-        }
-    ],
     
-    "preGenerateCommands-posix": ["./compileShaders.sh"],
-    "preGenerateCommands-windows-x86": ["compileShaders_x86.bat"],
-    "preGenerateCommands-windows-x86_64": ["compileShaders_x64.bat"],
+    "libs-windows-x86": [
+        "$PACKAGE_DIR/thirdparty/stb-2.0.1/bin/stb_x86"
+    ],
+    "libs-windows-x86_64": [
+        "user32",
+        "$PACKAGE_DIR/thirdparty/stb-2.0.1/bin/stb_x64"
+    ],
+    "lflags-linux-x86_64": [
+        "$PACKAGE_DIR/thirdparty/stb-2.0.1/bin/libstb.a"
+    ],
     
     "copyFiles-windows-x86": ["lib/x86/*.dll"],
     "copyFiles-windows-x86_64": ["lib/x64/*.dll"]
 }
-
