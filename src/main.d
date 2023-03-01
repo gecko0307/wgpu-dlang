@@ -114,7 +114,7 @@ class MyApplication: Application
 
 void main(string[] args)
 {
-    MyApplication app = New!MyApplication(1280, 720, false, "Dagon", args);
+    MyApplication app = New!MyApplication(1280, 720, false, "WebGPU Cerberus demo", args);
     app.run();
     Delete(app);
     writeln(allocatedMemory);
