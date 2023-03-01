@@ -47,12 +47,14 @@ import dgpu.asset.trimesh;
 import dgpu.asset.io.obj;
 import dgpu.asset.image;
 import dgpu.asset.texture;
+import freeview;
 
 class MyApplication: Application
 {
     Renderer renderer;
     Scene scene;
     Entity eCerberus;
+    FreeviewComponent view;
     
     this(uint winWidth, uint winHeight, bool fullscreen, string windowTitle, string[] args)
     {
@@ -64,7 +66,7 @@ class MyApplication: Application
         scene.defaultMaterial.baseColorTexture = defaultTexture;
         scene.defaultMaterial.normalTexture = defaultTexture;
         scene.defaultMaterial.roughnessMetallicTexture = defaultTexture;
-        scene.activeCamera.position = vec3(0, -4, -13);
+        scene.activeCamera.position = vec3(0, 0, 10);
         
         SuperImage cerberusAlbedo = loadImageSTB("data/cerberus-albedo.png");
         SuperImage cerberusNormal = loadImageSTB("data/cerberus-normal.png");
@@ -96,13 +98,16 @@ class MyApplication: Application
         {
             writeln(res[1]);
         }
+        
+        view = New!FreeviewComponent(eventManager, this);
     }
     
     override void onUpdate(Time t)
     {
-        eCerberus.geometry.rotation.y += 30.0f * t.delta;
+        view.update(t);
         
         scene.update(t);
+        scene.activeCamera.modelMatrix = view.invTransform;
         renderer.update(t);
     }
     

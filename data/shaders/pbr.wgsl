@@ -146,7 +146,7 @@ fn fs_main(input: FragmentInput) -> @location(0) vec4<f32>
     let tangentToEye = cotangentFrame(N, input.position.xyz, input.texcoord);
     
     var tangentNormal = textureSample(normalTexture, normalSampler, input.texcoord, 0).rgb;
-    tangentNormal = normalize(tangentNormal * 2.0 - 1.0);
+    tangentNormal = tangentNormal * 2.0 - 1.0;
     tangentNormal.y = -tangentNormal.y;
     N = normalize(tangentToEye * tangentNormal);
     
@@ -165,7 +165,7 @@ fn fs_main(input: FragmentInput) -> @location(0) vec4<f32>
     let F = fresnelRoughness(max(dot(H, E), 0.0), f0, roughness);
     let kD = (1.0 - F) * (1.0 - metallic);
     let specular = (NDF * G * F) / max(4.0 * max(dot(N, E), 0.0) * NL, 0.001);
-    let ambient = toLinear(vec3<f32>(0.05));
+    let ambient = toLinear(vec3<f32>(0.1, 0.1, 0.1));
     let radiance = albedo * ambient + (kD * albedo * invPI + specular) * NL * lightEnergy;
     
     return vec4<f32>(toGamma(radiance), 1.0);
