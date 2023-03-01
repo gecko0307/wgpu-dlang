@@ -66,7 +66,6 @@ class MyApplication: Application
         scene.defaultMaterial.baseColorTexture = defaultTexture;
         scene.defaultMaterial.normalTexture = defaultTexture;
         scene.defaultMaterial.roughnessMetallicTexture = defaultTexture;
-        scene.activeCamera.position = vec3(0, 0, 10);
         
         SuperImage cerberusAlbedo = loadImageSTB("data/cerberus-albedo.png");
         SuperImage cerberusNormal = loadImageSTB("data/cerberus-normal.png");

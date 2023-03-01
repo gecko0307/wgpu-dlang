@@ -96,7 +96,7 @@ class FreeviewComponent: EventListener
         rotRoll = rotationQuaternion(Vector3f(0.0f,0.0f,1.0f), 0.0f);
         transform = Matrix4x4f.identity;
         invTransform = Matrix4x4f.identity;
-        distance = 10.0f;
+        distance = 5.0f;
         
         currentTranslate = Vector3f(0.0f, 0.0f, 0.0f);
         targetTranslate = Vector3f(0.0f, 0.0f, 0.0f);
