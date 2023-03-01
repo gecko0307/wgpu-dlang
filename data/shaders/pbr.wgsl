@@ -16,14 +16,14 @@ struct UniformsEntity {
 };
 
 @group(0) @binding(0) var<uniform> renderer: UniformsRenderer;
-@group(2) @binding(0) var<uniform> material: UniformsMaterial;
 
+// TODO: @group(1) @binding(0) var<uniform> pass: UniformsPass;
+
+@group(2) @binding(0) var<uniform> material: UniformsMaterial;
 @group(2) @binding(1) var baseColorSampler: sampler;
 @group(2) @binding(2) var baseColorTexture: texture_2d_array<f32>;
-
 @group(2) @binding(3) var normalSampler: sampler;
 @group(2) @binding(4) var normalTexture: texture_2d_array<f32>;
-
 @group(2) @binding(5) var roughnessMetallicSampler: sampler;
 @group(2) @binding(6) var roughnessMetallicTexture: texture_2d_array<f32>;
 
