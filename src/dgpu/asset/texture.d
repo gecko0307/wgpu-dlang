@@ -29,19 +29,24 @@ module dgpu.asset.texture;
 import std.stdio;
 import std.conv;
 import std.string;
+import std.math;
+import std.algorithm;
 import core.stdc.string: memcpy;
 import dlib.core.ownership;
 import dlib.core.memory;
 import dlib.image.image;
 import bindbc.wgpu;
 import dgpu.core.gpu;
+import dgpu.asset.mipmap;
 
 class Texture: Owner
 {
     GPU gpu;
     uint width;
     uint height;
+    uint mipLevels;
     uint numLayers;
+    WGPUTextureFormat format;
     WGPUTexture texture;
     WGPUTextureView view;
     WGPUSampler sampler;
@@ -53,6 +58,7 @@ class Texture: Owner
         label = toHash.to!string;
         this.gpu = gpu;
         init(images);
+        generateMipmap(gpu, this);
     }
     
     this(GPU gpu, SuperImage img, Owner owner)
@@ -67,6 +73,10 @@ class Texture: Owner
         this.width = images[0].width;
         this.height = images[0].height;
         
+        this.format = WGPUTextureFormat.RGBA8Unorm;
+        
+        this.mipLevels = cast(uint)log2(max(width, height)) + 1;
+        
         WGPUTextureDescriptor textureDescriptor =
         {
             nextInChain: null,
@@ -74,8 +84,8 @@ class Texture: Owner
             usage: WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst,
             dimension: WGPUTextureDimension.D2,
             size: WGPUExtent3D(width, height, numLayers),
-            format: WGPUTextureFormat.RGBA8Unorm,
-            mipLevelCount: 1,
+            format: format,
+            mipLevelCount: mipLevels,
             sampleCount: 1
         };
         texture = wgpuDeviceCreateTexture(gpu.device, &textureDescriptor);
@@ -84,10 +94,10 @@ class Texture: Owner
         {
             nextInChain: null,
             label: label.toStringz,
-            format: WGPUTextureFormat.RGBA8Unorm,
+            format: format,
             dimension: WGPUTextureViewDimension.D2Array,
             baseMipLevel: 0,
-            mipLevelCount: 1,
+            mipLevelCount: mipLevels,
             baseArrayLayer: 0,
             arrayLayerCount: numLayers,
             aspect: WGPUTextureAspect.All
@@ -110,7 +120,7 @@ class Texture: Owner
             minFilter: WGPUFilterMode.Linear,
             mipmapFilter: WGPUMipmapFilterMode.Linear,
             lodMinClamp: 0.0f,
-            lodMaxClamp: 0.0f,
+            lodMaxClamp: 32.0f,
             compare: WGPUCompareFunction.Undefined,
             maxAnisotropy: 0
         };
