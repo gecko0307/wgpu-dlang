@@ -120,7 +120,7 @@ class Texture: Owner
             minFilter: WGPUFilterMode.Linear,
             mipmapFilter: WGPUMipmapFilterMode.Linear,
             lodMinClamp: 0.0f,
-            lodMaxClamp: 32.0f,
+            lodMaxClamp: mipLevels,
             compare: WGPUCompareFunction.Undefined,
             maxAnisotropy: 0
         };
