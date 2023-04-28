@@ -110,8 +110,8 @@ class RenderPass: Owner
     
     void renderScene(Scene scene, WGPURenderPassEncoder encoder)
     {
-        // TODO: update resource
-        wgpuRenderPassEncoderSetBindGroup(encoder, ResourceGroupIndex.PerPass, this.resource.bindGroup, 0, null);
+        resource.upload();
+        wgpuRenderPassEncoderSetBindGroup(encoder, ResourceGroupIndex.PerPass, resource.bindGroup, 0, null);
         
         foreach(material; scene.materials)
         {

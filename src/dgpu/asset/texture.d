@@ -122,7 +122,7 @@ class Texture: Owner
             lodMinClamp: 0.0f,
             lodMaxClamp: mipLevels,
             compare: WGPUCompareFunction.Undefined,
-            maxAnisotropy: 0
+            maxAnisotropy: 1
         };
         sampler = wgpuDeviceCreateSampler(gpu.device, &samplerDescriptor);
     }

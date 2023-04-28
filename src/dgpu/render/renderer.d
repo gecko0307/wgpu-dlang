@@ -156,6 +156,31 @@ WGPUBindGroupLayout createMaterialResourceLayout(Renderer renderer)
     return wgpuDeviceCreateBindGroupLayout(renderer.gpu.device, &bindGroupLayoutDescriptor);
 }
 
+WGPUBindGroupLayout createPassResourceLayout(Renderer renderer)
+{
+    WGPUBindGroupLayoutEntry[1] entries = [
+        {
+            nextInChain: null,
+            binding: 0,
+            visibility: WGPUShaderStage.Vertex | WGPUShaderStage.Fragment,
+            buffer: {
+                nextInChain: null,
+                type: WGPUBufferBindingType.Uniform,
+                hasDynamicOffset: false,
+                minBindingSize: PassUniforms.sizeof
+            }
+        }
+    ];
+    
+    WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = {
+        label: renderer.label.toStringz,
+        entries: entries.ptr,
+        entryCount: entries.length
+    };
+    
+    return wgpuDeviceCreateBindGroupLayout(renderer.gpu.device, &bindGroupLayoutDescriptor);
+}
+
 WGPUBindGroupLayout createGeometryResourceLayout(Renderer renderer)
 {
     WGPUBindGroupLayoutEntry[1] entries = [
@@ -188,6 +213,7 @@ class Renderer: EventListener
     ScreenRenderTarget screenRenderTarget;
     Array!RenderPass passes;
     WGPUBindGroupLayout rendererResourceLayout;
+    WGPUBindGroupLayout passResourceLayout;
     WGPUBindGroupLayout materialResourceLayout;
     WGPUBindGroupLayout geometryResourceLayout;
     RendererResource rendererResource;
@@ -203,6 +229,7 @@ class Renderer: EventListener
         app.logger.log("Swapchain format: " ~ to!string(screenRenderTarget.swapChainFormat));
         
         rendererResourceLayout = createRendererResourceLayout(this);
+        passResourceLayout = createPassResourceLayout(this);
         materialResourceLayout = createMaterialResourceLayout(this);
         geometryResourceLayout = createGeometryResourceLayout(this);
         

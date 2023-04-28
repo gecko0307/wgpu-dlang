@@ -63,7 +63,7 @@ class RenderPipeline: Owner
     {
         WGPUBindGroupLayout[4] layouts = [
             renderer.rendererResourceLayout,
-            pass.resource.bindGroupLayout,
+            renderer.passResourceLayout,
             renderer.materialResourceLayout,
             renderer.geometryResourceLayout
         ];

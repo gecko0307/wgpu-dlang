@@ -85,7 +85,7 @@ class RendererResource: Owner, Resource
         memcpy(destinationPtr, cast(ubyte*)&uniforms, RendererUniforms.sizeof);
         wgpuBufferUnmap(uniformBuffer);
         
-        WGPUBindGroupEntry uniformBufferBindGroupEntry = {
+        WGPUBindGroupEntry entry = {
             nextInChain: null,
             binding: 0,
             buffer: uniformBuffer,
@@ -97,7 +97,7 @@ class RendererResource: Owner, Resource
         WGPUBindGroupDescriptor bindGroupDescriptor = {
             label: label.toStringz,
             layout: renderer.rendererResourceLayout,
-            entries: &uniformBufferBindGroupEntry,
+            entries: &entry,
             entryCount: 1
         };
         _bindGroup = wgpuDeviceCreateBindGroup(renderer.gpu.device, &bindGroupDescriptor);
@@ -114,11 +114,17 @@ class RendererResource: Owner, Resource
     }
 }
 
+struct PassUniforms
+{
+    vec4 placeholder;
+}
+
 class PassResource: Owner, Resource
 {
     string label;
     Renderer renderer;
-    WGPUBindGroupLayout _bindGroupLayout;
+    PassUniforms uniforms;
+    WGPUBuffer uniformBuffer;
     WGPUBindGroup _bindGroup;
     
     this(Renderer renderer, Owner owner)
@@ -127,30 +133,39 @@ class PassResource: Owner, Resource
         label = "PassResourceUB_" ~ toHash.to!string;
         this.renderer = renderer;
         
-        WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = {
+        uniforms.placeholder = vec4(0, 0, 0, 0);
+        
+        WGPUBufferDescriptor uniformBufferDescriptor = {
+            nextInChain: null,
             label: label.toStringz,
-            entries: null,
-            entryCount: 0
+            usage: WGPUBufferUsage.Uniform | WGPUBufferUsage.CopyDst,
+            size: PassUniforms.sizeof,
+            mappedAtCreation: true
         };
-        _bindGroupLayout = wgpuDeviceCreateBindGroupLayout(renderer.gpu.device, &bindGroupLayoutDescriptor);
+        uniformBuffer = wgpuDeviceCreateBuffer(renderer.gpu.device, &uniformBufferDescriptor);
+        void* destinationPtr = wgpuBufferGetMappedRange(uniformBuffer, 0, PassUniforms.sizeof);
+        memcpy(destinationPtr, cast(ubyte*)&uniforms, PassUniforms.sizeof);
+        wgpuBufferUnmap(uniformBuffer);
+        
+        WGPUBindGroupEntry entry = {
+            binding: 0,
+            buffer: uniformBuffer,
+            offset: 0,
+            size: PassUniforms.sizeof
+        };
         
         WGPUBindGroupDescriptor bindGroupDescriptor = {
             label: label.toStringz,
-            layout: bindGroupLayout,
-            entries: null,
-            entryCount: 0
+            layout: renderer.passResourceLayout,
+            entries: &entry,
+            entryCount: 1
         };
         _bindGroup = wgpuDeviceCreateBindGroup(renderer.gpu.device, &bindGroupDescriptor);
     }
     
     void upload()
     {
-        //TODO
-    }
-    
-    WGPUBindGroupLayout bindGroupLayout() @property
-    {
-        return _bindGroupLayout;
+        wgpuQueueWriteBuffer(renderer.gpu.queue, uniformBuffer, 0, cast(ubyte*)&uniforms, PassUniforms.sizeof);
     }
     
     WGPUBindGroup bindGroup() @property
