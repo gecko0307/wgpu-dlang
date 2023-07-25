@@ -8,8 +8,8 @@
     "license": "BSL-1.0",
     
     "dependencies": {
-        "dlib": "~>1.2.0-beta1",
-        "bindbc-wgpu": "~>0.16.0",
+        "dlib": "~>1.2.0",
+        "bindbc-wgpu": "~>0.17.0",
         "bindbc-sdl": "~>1.0.1"
     },
     
