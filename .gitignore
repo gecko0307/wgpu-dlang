@@ -34,3 +34,6 @@ docs.json
 
 # Backup files
 *~
+
+# Log files
+log.txt
