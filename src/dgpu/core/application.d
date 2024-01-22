@@ -99,7 +99,7 @@ class Application: EventListener
         }
         
         WGPUSupport wgpuSup = loadWGPU();
-        if (wgpuSup != WGPUSupport.wgpu017)
+        if (wgpuSup != WGPUSupport.wgpu019)
         {
             if (wgpuSup == WGPUSupport.badLibrary)
                 logger.log("Failed to load some WGPU functions");
@@ -121,7 +121,7 @@ class Application: EventListener
             SDL_SetHint(SDL_HINT_RENDER_DRIVER, toStringz("metal"));
         }
 
-        if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
+        if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
             logger.error("Failed to init SDL: " ~ to!string(SDL_GetError()));
 
         width = winWidth;

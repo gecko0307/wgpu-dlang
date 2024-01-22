@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Timur Gafarov
+Copyright (c) 2021-2024 Timur Gafarov
 
 Boost Software License - Version 1.0 - August 17th, 2003
 Permission is hereby granted, free of charge, to any person or organization
@@ -48,8 +48,7 @@ interface RenderTarget
 class ScreenRenderTarget: Owner, RenderTarget
 {
     GPU gpu;
-    WGPUTextureFormat swapChainFormat;
-    protected WGPUSwapChain _swapChain;
+    WGPUTextureFormat surfaceFormat;
     protected WGPUTextureView _depthStencilBuffer;
     uint width;
     uint height;
@@ -59,34 +58,28 @@ class ScreenRenderTarget: Owner, RenderTarget
     {
         super(o);
         this.gpu = gpu;
-        swapChainFormat = WGPUTextureFormat.BGRA8UnormSrgb; //wgpuSurfaceGetPreferredFormat(gpu.surface, gpu.adapter);
+        surfaceFormat = WGPUTextureFormat.BGRA8UnormSrgb; //wgpuSurfaceGetPreferredFormat(gpu.surface, gpu.adapter);
         this.width = width;
         this.height = height;
         this.aspectRatio = cast(float)width / cast(float)height;
-        _swapChain = createSwapChain(swapChainFormat, width, height);
+        configureSurface(surfaceFormat, width, height);
         _depthStencilBuffer = createDepthStencilBuffer(width, height);
     }
     
-    protected WGPUSwapChain createSwapChain(WGPUTextureFormat format, uint w, uint h) {
-        WGPUSwapChainDescriptorExtras swcDescExtras = {
-            chain: {
-                next: null,
-                sType: cast(WGPUSType)WGPUNativeSType.SwapChainDescriptorExtras
-            },
-            alphaMode: WGPUCompositeAlphaMode.Auto,
-            viewFormatCount: 0,
-            viewFormats: null
-        };
-        
-        WGPUSwapChainDescriptor swapChainDescriptor = {
-            nextInChain: cast(WGPUChainedStruct*)&swcDescExtras,
-            usage: WGPUTextureUsage.RenderAttachment,
+    protected void configureSurface(WGPUTextureFormat format, uint w, uint h) {
+        WGPUSurfaceConfiguration config = {
+            nextInChain: null,
+            device: gpu.device,
             format: format,
+            usage: WGPUTextureUsage.RenderAttachment,
+            viewFormatCount: 0,
+            viewFormats: null,
+            alphaMode: WGPUCompositeAlphaMode.Auto,
             width: w,
             height: h,
-            presentMode: WGPUPresentMode.Mailbox
+            presentMode: WGPUPresentMode.Fifo
         };
-        return wgpuDeviceCreateSwapChain(gpu.device, gpu.surface, &swapChainDescriptor);
+        wgpuSurfaceConfigure(gpu.surface, &config);
     }
     
     protected WGPUTextureView createDepthStencilBuffer(uint width, uint height)
@@ -121,8 +114,11 @@ class ScreenRenderTarget: Owner, RenderTarget
 
     RenderBuffer nextBackBuffer()
     {
-        WGPUTextureView nextTexture = wgpuSwapChainGetCurrentTextureView(_swapChain);
-        return RenderBuffer(nextTexture, width, height);
+        WGPUSurfaceTexture surfaceTexture;
+        wgpuSurfaceGetCurrentTexture(gpu.surface, &surfaceTexture);
+        while (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus.Success) {}
+        WGPUTextureView nextTextureView = wgpuTextureCreateView(surfaceTexture.texture, null);
+        return RenderBuffer(nextTextureView, width, height);
     }
     
     RenderBuffer depthStencilBuffer()
@@ -132,7 +128,7 @@ class ScreenRenderTarget: Owner, RenderTarget
     
     WGPUTextureFormat colorFormat()
     {
-        return swapChainFormat;
+        return surfaceFormat;
     }
     
     WGPUTextureFormat depthStencilFormat()
@@ -145,12 +141,12 @@ class ScreenRenderTarget: Owner, RenderTarget
         this.width = width;
         this.height = height;
         this.aspectRatio = cast(float)width / cast(float)height;
-        _swapChain = createSwapChain(swapChainFormat, width, height);
+        configureSurface(surfaceFormat, width, height);
         _depthStencilBuffer = createDepthStencilBuffer(width, height);
     }
     
     void present()
     {
-        wgpuSwapChainPresent(_swapChain);
+        wgpuSurfacePresent(gpu.surface);
     }
 }

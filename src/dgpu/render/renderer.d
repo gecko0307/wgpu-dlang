@@ -226,7 +226,7 @@ class Renderer: EventListener
         label = toHash.to!string;
         gpu = app.gpu;
         screenRenderTarget = New!ScreenRenderTarget(gpu, app.width, app.height, this);
-        app.logger.log("Swapchain format: " ~ to!string(screenRenderTarget.swapChainFormat));
+        app.logger.log("Surface format: " ~ to!string(screenRenderTarget.surfaceFormat));
         
         rendererResourceLayout = createRendererResourceLayout(this);
         passResourceLayout = createPassResourceLayout(this);

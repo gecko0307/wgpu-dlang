@@ -63,7 +63,9 @@ class GPU: Owner
         instance = wgpuCreateInstance(&instanceDesc);
         
         SDL_SysWMinfo wmInfo;
-        SDL_GetWindowWMInfo(app.window, &wmInfo);
+        if (SDL_GetWindowWMInfo(app.window, &wmInfo) != SDL_TRUE)
+            app.logger.error("Failed to init SDL: " ~ to!string(SDL_GetError()));
+        
         app.logger.log("Subsystem: " ~ to!string(wmInfo.subsystem));
         surface = createSurface(wmInfo);
         app.logger.log("Surface created");
@@ -100,8 +102,6 @@ class GPU: Owner
                 next: null,
                 sType: cast(WGPUSType)WGPUNativeSType.DeviceExtras
             },
-            //nativeFeatures: WGPUNativeFeature.TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
-            //label: "Device",
             tracePath: null,
         };
         WGPURequiredLimits limits = {
@@ -141,7 +141,7 @@ class GPU: Owner
         };
         WGPUDeviceDescriptor deviceDescriptor = {
             nextInChain: cast(const(WGPUChainedStruct)*)&deviceExtras,
-            requiredFeaturesCount: 0,
+            requiredFeatureCount: 0,
             requiredFeatures: null,
             requiredLimits: &limits
         };

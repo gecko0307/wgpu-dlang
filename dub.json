@@ -9,7 +9,7 @@
     
     "dependencies": {
         "dlib": "~>1.2.0",
-        "bindbc-wgpu": "~>0.17.0",
+        "bindbc-wgpu": "~master",
         "bindbc-sdl": "~>1.0.1"
     },
     
