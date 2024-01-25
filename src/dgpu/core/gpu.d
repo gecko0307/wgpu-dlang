@@ -63,6 +63,7 @@ class GPU: Owner
         instance = wgpuCreateInstance(&instanceDesc);
         
         SDL_SysWMinfo wmInfo;
+        SDL_VERSION(&wmInfo.version_);
         if (SDL_GetWindowWMInfo(app.window, &wmInfo) != SDL_TRUE)
             app.logger.error("Failed to init SDL: " ~ to!string(SDL_GetError()));
         
@@ -107,9 +108,9 @@ class GPU: Owner
         WGPURequiredLimits limits = {
             nextInChain: null,
             limits: {
-                maxTextureDimension1D: 8192,
-                maxTextureDimension2D: 8192,
-                maxTextureDimension3D: 8192,
+                maxTextureDimension1D: 2048,
+                maxTextureDimension2D: 2048,
+                maxTextureDimension3D: 2048,
                 maxTextureArrayLayers: 256,
                 maxBindGroups: 4,
                 maxBindingsPerBindGroup: 640,
@@ -195,6 +196,7 @@ class GPU: Owner
         }
         else version(linux)
         {
+            /*
             // Needs test!
             if (wmInfo.subsystem == SDL_SYSWM_X11)
             {
@@ -217,6 +219,32 @@ class GPU: Owner
             else
             {
                 application.logger.error("Unsupported subsystem, sorry");
+            }
+            */
+
+            if (wmInfo.subsystem == SDL_SYSWM_WAYLAND)
+            {
+                // TODO: support Wayland
+                application.logger.error("Unsupported subsystem, sorry");
+            }
+            // System might use XCB so SDL_SysWMinfo will contain subsystem SDL_SYSWM_UNKNOWN. Although, X11 still can be used to create surface
+            else
+            {
+                auto x11_display = wmInfo.info.x11.display;
+                auto x11_window = wmInfo.info.x11.window;
+                WGPUSurfaceDescriptorFromXlibWindow sfdX11 = {
+                    chain: {
+                        next: null,
+                        sType: WGPUSType.SurfaceDescriptorFromXlibWindow
+                    },
+                    display: x11_display,
+                    window: x11_window
+                };
+                WGPUSurfaceDescriptor sfd = {
+                    label: null,
+                    nextInChain: cast(const(WGPUChainedStruct)*)&sfdX11
+                };
+                surface = wgpuInstanceCreateSurface(instance, &sfd);
             }
         }
         else version(OSX)
