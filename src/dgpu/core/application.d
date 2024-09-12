@@ -104,7 +104,7 @@ class Application: EventListener
             if (wgpuSup == WGPUSupport.badLibrary)
                 logger.log("Failed to load some WGPU functions");
             else
-                logger.error("WGPU library is not found. Please, install WGPU 22.1 or higher");
+                logger.error("WGPU library is not found");
         }
         
         if (sharedlibLoader.errors.length)

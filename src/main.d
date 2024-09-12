@@ -67,9 +67,9 @@ class MyApplication: Application
         scene.defaultMaterial.normalTexture = defaultTexture;
         scene.defaultMaterial.roughnessMetallicTexture = defaultTexture;
         
-        SuperImage cerberusAlbedo = loadImageSTB("data/cerberus-albedo.png");
-        SuperImage cerberusNormal = loadImageSTB("data/cerberus-normal.png");
-        SuperImage cerberusRM = loadImageSTB("data/cerberus-roughness-metallic.png");
+        SuperImage cerberusAlbedo = loadImage("data/cerberus-albedo.png");
+        SuperImage cerberusNormal = loadImage("data/cerberus-normal.png");
+        SuperImage cerberusRM = loadImage("data/cerberus-roughness-metallic.png");
         
         Texture texCerberusAlbedo = New!Texture(renderer.gpu, cerberusAlbedo, this);
         Texture texCerberusNormal = New!Texture(renderer.gpu, cerberusNormal, this);

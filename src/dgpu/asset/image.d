@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Timur Gafarov
+Copyright (c) 2021-2024 Timur Gafarov
 
 Boost Software License - Version 1.0 - August 17th, 2003
 Permission is hereby granted, free of charge, to any person or organization
@@ -31,6 +31,7 @@ import dlib.core.stream;
 import dlib.core.compound;
 import dlib.filesystem.local;
 import dlib.image.image;
+import dlib.image.io;
 import stb.image.binding;
 import stb.image;
 
@@ -72,5 +73,48 @@ Compound!(SuperImage, string) loadImageSTB(
     else
         res = compound(img, "unknown/corrupt image");
     Delete(compressed);
+    return res;
+}
+
+SuperImage loadImage(string filename)
+{
+    InputStream input = openForInput(filename);
+    auto img = loadImage(input);
+    input.close();
+    return img;
+}
+
+SuperImage loadImage(InputStream istrm)
+{
+    Compound!(SuperImage, string) res =
+        loadImage(istrm, defaultImageFactory);
+    if (res[0] is null)
+        throw new Exception(res[1]);
+    else
+        return res[0];
+}
+
+Compound!(SuperImage, string) loadImage(
+    InputStream istrm,
+    SuperImageFactory imgFac)
+{
+    ubyte[] data = New!(ubyte[])(istrm.size);
+    istrm.fillArray(data);
+    ArrayStream arrStrm = New!ArrayStream(data);
+    auto res = loadPNG(arrStrm, imgFac);
+    Delete(arrStrm);
+    Delete(data);
+    auto img = res[0];
+    if (img.channels != 4)
+    {
+        auto img2 = imgFac.createImage(img.width, img.height, 4, 8);
+        foreach(y; 0..img2.height)
+        foreach(x; 0..img2.width)
+        {
+            img2[x, y] = img[x, y];
+        }
+        img.free();
+        res[0] = img2;
+    }
     return res;
 }
