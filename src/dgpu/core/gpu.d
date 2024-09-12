@@ -109,6 +109,9 @@ class GPU: Owner
         WGPURequiredLimits limits = {
             nextInChain: null,
             limits: {
+                maxTextureDimension1D: 2048,
+                maxTextureDimension2D: 2048,
+                maxTextureDimension3D: 2048
             }
         };
         WGPUDeviceDescriptor deviceDescriptor = {
@@ -167,32 +170,6 @@ class GPU: Owner
         }
         else version(linux)
         {
-            /*
-            // Needs test!
-            if (wmInfo.subsystem == SDL_SYSWM_X11)
-            {
-                auto x11_display = wmInfo.info.x11.display;
-                auto x11_window = wmInfo.info.x11.window;
-                WGPUSurfaceDescriptorFromXlib sfdX11 = {
-                    chain: {
-                        next: null,
-                        sType: WGPUSType.SurfaceDescriptorFromXlib
-                    },
-                    display: x11_display,
-                    window: x11_window
-                };
-                WGPUSurfaceDescriptor sfd = {
-                    label: null,
-                    nextInChain: cast(const(WGPUChainedStruct)*)&sfdX11
-                };
-                surface = wgpuInstanceCreateSurface(instance, &sfd);
-            }
-            else
-            {
-                application.logger.error("Unsupported subsystem, sorry");
-            }
-            */
-
             if (wmInfo.subsystem == SDL_SYSWM_WAYLAND)
             {
                 // TODO: support Wayland
