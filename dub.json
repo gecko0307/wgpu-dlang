@@ -38,6 +38,8 @@
         "user32",
         "$PACKAGE_DIR/thirdparty/stb-2.0.1/bin/stb_x64"
     ],
+
+    "lflags-linux": ["-rpath=."],
     "lflags-linux-x86_64": [
         "$PACKAGE_DIR/thirdparty/stb-2.0.1/bin/libstb.a"
     ],
