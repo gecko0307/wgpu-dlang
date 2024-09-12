@@ -14,13 +14,11 @@
     },
     
     "importPaths": [
-        "src",
-        "thirdparty/stb-2.0.1/source"
+        "src"
     ],
     
     "sourcePaths": [
-        "src",
-        "thirdparty/stb-2.0.1/source"
+        "src"
     ],
     
     "versions": [
@@ -32,16 +30,13 @@
     ],
     
     "libs-windows-x86": [
-        "$PACKAGE_DIR/thirdparty/stb-2.0.1/bin/stb_x86"
     ],
     "libs-windows-x86_64": [
-        "user32",
-        "$PACKAGE_DIR/thirdparty/stb-2.0.1/bin/stb_x64"
+        "user32"
     ],
 
     "lflags-linux": ["-rpath=."],
     "lflags-linux-x86_64": [
-        "$PACKAGE_DIR/thirdparty/stb-2.0.1/bin/libstb.a"
     ],
     
     "copyFiles-windows-x86": ["lib/x86/*.dll"],

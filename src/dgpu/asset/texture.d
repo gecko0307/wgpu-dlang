@@ -187,8 +187,5 @@ class Texture: Owner
         };
         WGPUCommandBuffer commandBuffer = wgpuCommandEncoderFinish(commandEncoder, &commandBufferDescriptor);
         wgpuQueueSubmit(gpu.queue, 1, &commandBuffer);
-        
-        //wgpuCommandEncoderDrop(commandEncoder);
-        //wgpuBufferDrop(textureBuffer);
     }
 }

@@ -32,49 +32,6 @@ import dlib.core.compound;
 import dlib.filesystem.local;
 import dlib.image.image;
 import dlib.image.io;
-import stb.image.binding;
-import stb.image;
-
-SuperImage loadImageSTB(string filename)
-{
-    InputStream input = openForInput(filename);
-    auto img = loadImageSTB(input);
-    input.close();
-    return img;
-}
-
-SuperImage loadImageSTB(InputStream istrm)
-{
-    Compound!(SuperImage, string) res =
-        loadImageSTB(istrm, defaultImageFactory);
-    if (res[0] is null)
-        throw new Exception(res[1]);
-    else
-        return res[0];
-}
-
-Compound!(SuperImage, string) loadImageSTB(
-    InputStream istrm,
-    SuperImageFactory imgFac)
-{
-    ubyte[] compressed = New!(ubyte[])(cast(size_t)istrm.size);
-    istrm.fillArray(compressed);
-    int width, height, channels;
-    ubyte* data = stbi_load_from_memory(compressed.ptr, cast(uint)compressed.length, &width, &height, &channels, 4);
-    SuperImage img = null;
-    Compound!(SuperImage, string) res;
-    if (data)
-    {
-        img = imgFac.createImage(width, height, 4, 8);
-        img.data[] = data[0..width*height*4];
-        stbi_image_free(data);
-        res = compound(img, "");
-    }
-    else
-        res = compound(img, "unknown/corrupt image");
-    Delete(compressed);
-    return res;
-}
 
 SuperImage loadImage(string filename)
 {
