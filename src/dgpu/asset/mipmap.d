@@ -216,6 +216,7 @@ void generateMipmap(GPU gpu, Texture texture)
         
         WGPURenderPassColorAttachment colorAttachmentDesc = {
             view: views[i],
+            depthSlice: WGPU_DEPTH_SLICE_UNDEFINED,
             resolveTarget: null,
             loadOp: WGPULoadOp.Clear,
             storeOp: WGPUStoreOp.Store,
@@ -254,6 +255,7 @@ void generateMipmap(GPU gpu, Texture texture)
         wgpuRenderPassEncoderSetBindGroup(passEncoder, 0, bindGroups[bindGroupIndex], 0, null);
         wgpuRenderPassEncoderDraw(passEncoder, 3, 1, 0, 0);
         wgpuRenderPassEncoderEnd(passEncoder);
+        wgpuRenderPassEncoderRelease(passEncoder);
     }
     
     WGPUExtent3D mipLevelSize = {
@@ -279,7 +281,6 @@ void generateMipmap(GPU gpu, Texture texture)
         mipLevelSize.height = cast(uint)ceil(mipLevelSize.height / 2.0f);
     }
     
-    WGPUCommandBuffer commandBuffer = wgpuCommandEncoderFinish(cmdEncoder, null);
-    wgpuQueueSubmit(gpu.queue, 1, &commandBuffer);
+    gpu.submitCommands(cmdEncoder);
     wgpuTextureDestroy(mipTexture);
 }

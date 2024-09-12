@@ -82,6 +82,7 @@ class RenderPass: Owner
         
         WGPURenderPassColorAttachment colorAttachment = {
             view: colorTargetView,
+            depthSlice: WGPU_DEPTH_SLICE_UNDEFINED,
             resolveTarget: null,
             loadOp: WGPULoadOp.Clear,
             storeOp: WGPUStoreOp.Store,

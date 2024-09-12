@@ -305,6 +305,7 @@ class Renderer: EventListener
                 wgpuRenderPassEncoderSetBindGroup(encoder, ResourceGroupIndex.PerFrame, rendererResource.bindGroup, 0, null);
                 pass.renderScene(scene, encoder);
                 pass.end(encoder);
+                wgpuRenderPassEncoderRelease(encoder);
             }
             else
             {

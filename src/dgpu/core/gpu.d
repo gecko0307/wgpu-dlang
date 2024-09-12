@@ -31,6 +31,7 @@ import std.conv;
 import bindbc.sdl;
 import bindbc.wgpu;
 import dlib.core.ownership;
+import dlib.container.array;
 import dgpu.core.application;
 
 class GPU: Owner
@@ -41,7 +42,7 @@ class GPU: Owner
     WGPUAdapter adapter;
     WGPUDevice device;
     WGPUQueue queue;
-    WGPUAdapterProperties adapterProperties;
+    //WGPUAdapterProperties adapterProperties;
     
     this(Application app)
     {
@@ -76,11 +77,13 @@ class GPU: Owner
         queue = wgpuDeviceGetQueue(device);
         app.logger.log("Queue created");
         
+        /*
         wgpuAdapterGetProperties(adapter, &adapterProperties);
         app.logger.log("Device ID: " ~ to!string(adapterProperties.deviceID));
         app.logger.log("Vendor ID: " ~ to!string(adapterProperties.vendorID));
         app.logger.log("Adapter type: " ~ to!string(adapterProperties.adapterType));
         app.logger.log("Backend: " ~ to!string(adapterProperties.backendType));
+        */
     }
     
     protected WGPUAdapter createAdapter(WGPUSurface surface)
@@ -107,36 +110,6 @@ class GPU: Owner
         WGPURequiredLimits limits = {
             nextInChain: null,
             limits: {
-                maxTextureDimension1D: 8192,
-                maxTextureDimension2D: 8192,
-                maxTextureDimension3D: 8192,
-                maxTextureArrayLayers: 256,
-                maxBindGroups: 4,
-                maxBindingsPerBindGroup: 640,
-                maxDynamicUniformBuffersPerPipelineLayout: 8,
-                maxDynamicStorageBuffersPerPipelineLayout: 4,
-                maxSampledTexturesPerShaderStage: 16,
-                maxSamplersPerShaderStage: 16,
-                maxStorageBuffersPerShaderStage: 8,
-                maxStorageTexturesPerShaderStage: 4,
-                maxUniformBuffersPerShaderStage: 12,
-                maxUniformBufferBindingSize: 65536,
-                maxStorageBufferBindingSize: 134217728,
-                minUniformBufferOffsetAlignment: 256,
-                minStorageBufferOffsetAlignment: 256,
-                maxVertexBuffers: 8,
-                maxBufferSize: 268435456,
-                maxVertexAttributes: 16,
-                maxVertexBufferArrayStride: 2048,
-                maxInterStageShaderComponents: 60,
-                maxInterStageShaderVariables: 16,
-                maxColorAttachments: 8,
-                maxComputeWorkgroupStorageSize: 16352,
-                maxComputeInvocationsPerWorkgroup: 256,
-                maxComputeWorkgroupSizeX: 256,
-                maxComputeWorkgroupSizeY: 256,
-                maxComputeWorkgroupSizeZ: 64,
-                maxComputeWorkgroupsPerDimension: 65535
             }
         };
         WGPUDeviceDescriptor deviceDescriptor = {

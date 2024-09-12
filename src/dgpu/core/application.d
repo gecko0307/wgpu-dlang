@@ -99,12 +99,12 @@ class Application: EventListener
         }
         
         WGPUSupport wgpuSup = loadWGPU();
-        if (wgpuSup != WGPUSupport.wgpu019)
+        if (wgpuSup != WGPUSupport.wgpu022)
         {
             if (wgpuSup == WGPUSupport.badLibrary)
                 logger.log("Failed to load some WGPU functions");
             else
-                logger.error("WGPU library is not found. Please, install WGPU 0.8.0 or higher");
+                logger.error("WGPU library is not found. Please, install WGPU 22.1 or higher");
         }
         
         if (sharedlibLoader.errors.length)
