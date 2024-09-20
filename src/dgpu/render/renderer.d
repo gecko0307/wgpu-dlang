@@ -318,5 +318,7 @@ class Renderer: EventListener
         
         gpu.submitCommands(commandEncoder);
         screenRenderTarget.present();
+        
+        wgpuCommandEncoderRelease(commandEncoder);
     }
 }
