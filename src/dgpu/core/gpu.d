@@ -138,6 +138,7 @@ class GPU: Owner
         WGPUCommandBufferDescriptor commandBufferDescriptor = { label: null };
         WGPUCommandBuffer commandBuffer = wgpuCommandEncoderFinish(commandEncoder, &commandBufferDescriptor);
         wgpuQueueSubmit(queue, 1, &commandBuffer);
+        wgpuCommandBufferRelease(commandBuffer);
     }
     
     protected WGPUSurface createSurface(SDL_SysWMinfo wmInfo)
