@@ -1,9 +1,11 @@
 # WebGPU demo in D
 A minimal WebGPU-based render engine that can load and display textured and shaded OBJ files. Uses [bindbc-wgpu](https://github.com/gecko0307/bindbc-wgpu) to load WebGPU functions and SDL2 to create a window. Written in [D language](https://dlang.org).
 
-**Warning: highly experimental!** I've tested it on Windows and Linux so far. It probably should work on macOS, however has not been tested yet.
+The demo renders a Cerberus model by Andrew Maximov.
 
 [![Screenshot](screenshot.jpg)](screenshot.jpg)
+
+**Warning: highly experimental!** I've tested it on Windows and Linux so far. It probably should work on macOS, however has not been tested yet.
 
 To run the application, you should install [SDL2](https://www.libsdl.org) and [wgpu-native 22.1](https://github.com/gfx-rs/wgpu-native). Under Windows, `SDL2.dll` and `wgpu_native.dll` can be copied to the application directory.
 
