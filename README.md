@@ -1,5 +1,5 @@
 # WebGPU demo in D
-A minimal WebGPU-based render engine that can load and display textured and shaded OBJ files. Uses [bindbc-wgpu](https://github.com/gecko0307/bindbc-wgpu) to load WebGPU functions and SDL2 to create a window. Written in [D language](https://dlang.org).
+A minimal WebGPU-based render engine that can load and display textured and shaded OBJ files. Uses [bindbc-wgpu](https://github.com/gecko0307/bindbc-wgpu) to link WebGPU functions and SDL2 to create a window. Written in [D language](https://dlang.org).
 
 The demo renders a Cerberus model by Andrew Maximov.
 
@@ -15,4 +15,4 @@ It is a new low-level graphics and compute API for the Web that works on top of 
 [wgpu-native](https://github.com/gfx-rs/wgpu-native) is a native WebGPU implementation in Rust that compiles to a library with C API, which can be used in any language. This potentially makes WebGPU a viable and future-proof alternative to OpenGL for cross-platform graphics development.
 
 ### Is this going to be a full-blown game engine?
-Probably. Let's wait for API to stabilize first.
+Probably. Let's wait for the API to stabilize first.
