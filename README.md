@@ -1,5 +1,5 @@
 # WebGPU demo in D
-[bindbc-wgpu](https://github.com/gecko0307/bindbc-wgpu) usage example - a minimal WebGPU-based render engine that can load and display textured and shaded OBJ files. Uses SDL2 for window creation. Written in [D language](https://dlang.org).
+A minimal WebGPU-based render engine that can load and display textured and shaded OBJ files. Uses [bindbc-wgpu](https://github.com/gecko0307/bindbc-wgpu) to load WebGPU functions and SDL2 to create a window. Written in [D language](https://dlang.org).
 
 **Warning: highly experimental!** I've tested it on Windows and Linux so far. It probably should work on macOS, however has not been tested yet.
 
