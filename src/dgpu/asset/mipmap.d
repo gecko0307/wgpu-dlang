@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2023 Timur Gafarov
+Copyright (c) 2023-2025 Timur Gafarov
 
 Boost Software License - Version 1.0 - August 17th, 2003
 Permission is hereby granted, free of charge, to any person or organization
@@ -36,6 +36,9 @@ import std.conv;
 import bindbc.wgpu;
 import dgpu.core.gpu;
 import dgpu.asset.texture;
+
+string mipmapVertModulePath = "data/shaders/mipmap.vert.spv";
+string mipmapFragModulePath = "data/shaders/mipmap.frag.spv";
 
 void generateMipmap(GPU gpu, Texture texture)
 {
@@ -118,23 +121,43 @@ void generateMipmap(GPU gpu, Texture texture)
     
     WGPUPipelineLayout pipelineLayout = wgpuDeviceCreatePipelineLayout(gpu.device, &pipelineLayoutDesc);
     
-    const(char)* shaderText = readText("data/shaders/mipmap.wgsl").toStringz;
-    WGPUShaderModuleWGSLDescriptor wgslDescriptor = {
+    // TODO: load code once and reuse
+    uint[] spvVert = cast(uint[])read(mipmapVertModulePath);
+    uint[] spvFrag = cast(uint[])read(mipmapFragModulePath);
+    
+    // Vertex shader module
+    WGPUShaderModuleSPIRVDescriptor spvVertexModuleDescriptor = {
         chain: {
             next: null,
-            sType: WGPUSType.ShaderModuleWGSLDescriptor
+            sType: WGPUSType.ShaderModuleSPIRVDescriptor
         },
-        code: shaderText
+        codeSize: cast(uint)spvVert.length,
+        code: spvVert.ptr
     };
-    WGPUShaderModuleDescriptor shaderSource = {
-        nextInChain: cast(const(WGPUChainedStruct)*)&wgslDescriptor,
-        label: toStringz("shader.wgsl")
+    WGPUShaderModuleDescriptor vertexShaderModuleDescriptor = {
+        nextInChain: cast(const(WGPUChainedStruct)*)&spvVertexModuleDescriptor,
+        label: toStringz("mipmap.vert.spv"),
     };
-    WGPUShaderModule shaderModule = wgpuDeviceCreateShaderModule(gpu.device, &shaderSource);
+    WGPUShaderModule vertexShaderModule = wgpuDeviceCreateShaderModule(gpu.device, &vertexShaderModuleDescriptor);
+    
+    // Fragment shader module
+    WGPUShaderModuleSPIRVDescriptor spvFragmentModuleDescriptor = {
+        chain: {
+            next: null,
+            sType: WGPUSType.ShaderModuleSPIRVDescriptor
+        },
+        codeSize: cast(uint)spvFrag.length,
+        code: spvFrag.ptr
+    };
+    WGPUShaderModuleDescriptor fragmentShaderModuleDescriptor = {
+        nextInChain: cast(const(WGPUChainedStruct)*)&spvFragmentModuleDescriptor,
+        label: toStringz("mipmap.frag.spv"),
+    };
+    WGPUShaderModule fragmentShaderModule = wgpuDeviceCreateShaderModule(gpu.device, &fragmentShaderModuleDescriptor);
     
     WGPUFragmentState fragmentState = {
-        module_: shaderModule,
-        entryPoint: "fs_main",
+        module_: fragmentShaderModule,
+        entryPoint: "main",
         targetCount: 1,
         targets: &colorTargetState
     };
@@ -143,8 +166,8 @@ void generateMipmap(GPU gpu, Texture texture)
         label: "Mipmap pipeline",
         layout: pipelineLayout,
         vertex: {
-            module_: shaderModule,
-            entryPoint: "vs_main",
+            module_: vertexShaderModule,
+            entryPoint: "main",
             bufferCount: 0,
             buffers: null
         },

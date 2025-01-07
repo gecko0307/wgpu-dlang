@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Timur Gafarov
+Copyright (c) 2021-2025 Timur Gafarov
 
 Boost Software License - Version 1.0 - August 17th, 2003
 Permission is hereby granted, free of charge, to any person or organization
@@ -35,20 +35,52 @@ import dgpu.render.renderer;
 
 class Shader: Owner
 {
+    Renderer renderer;
     string label;
     string vertexEntryPoint = "vs_main";
     string fragmentEntryPoint = "fs_main";
-    WGPUShaderModule modul;
     
-    this(string wgslSource, string vertexEntryPoint, string fragmentEntryPoint, Renderer renderer, Owner o)
+    struct Modules
     {
-        super(o);
+        WGPUShaderModule vertex;
+        WGPUShaderModule fragment;
+    }
+    
+    Modules modules;
+    
+    this(string vertexEntryPoint, string fragmentEntryPoint, Renderer renderer, Owner owner)
+    {
+        super(owner);
         label = toHash.to!string;
-        
+        this.renderer = renderer;
         this.vertexEntryPoint = vertexEntryPoint;
         this.fragmentEntryPoint = fragmentEntryPoint;
-        
-        const(char)* shaderText = wgslSource.toStringz;
+    }
+    
+    this(string wgslCode, string vertexEntryPoint, string fragmentEntryPoint, Renderer renderer, Owner owner)
+    {
+        this(vertexEntryPoint, fragmentEntryPoint, renderer, owner);
+        modules.vertex = moduleFromWGSL(wgslCode);
+        modules.fragment = modules.vertex;
+    }
+    
+    this(uint[] spvCode, string vertexEntryPoint, string fragmentEntryPoint, Renderer renderer, Owner owner)
+    {
+        this(vertexEntryPoint, fragmentEntryPoint, renderer, owner);
+        modules.vertex = moduleFromSPIRV(spvCode);
+        modules.fragment = modules.vertex;
+    }
+    
+    this(uint[] spvVertCode, string vertexEntryPoint, uint[] spvFragCode, string fragmentEntryPoint, Renderer renderer, Owner owner)
+    {
+        this(vertexEntryPoint, fragmentEntryPoint, renderer, owner);
+        modules.vertex = moduleFromSPIRV(spvVertCode);
+        modules.fragment = moduleFromSPIRV(spvFragCode);
+    }
+    
+    WGPUShaderModule moduleFromWGSL(string wgslCode)
+    {
+        const(char)* shaderText = wgslCode.toStringz;
         WGPUShaderModuleWGSLDescriptor wgslDescriptor = {
             chain: {
                 next: null,
@@ -62,6 +94,25 @@ class Shader: Owner
             label: label.toStringz,
         };
         
-        modul = wgpuDeviceCreateShaderModule(renderer.gpu.device, &shaderModuleDescriptor);
+        return wgpuDeviceCreateShaderModule(renderer.gpu.device, &shaderModuleDescriptor);
+    }
+    
+    WGPUShaderModule moduleFromSPIRV(uint[] spvCode)
+    {
+        WGPUShaderModuleSPIRVDescriptor spirvDescriptor = {
+            chain: {
+                next: null,
+                sType: WGPUSType.ShaderModuleSPIRVDescriptor
+            },
+            codeSize: cast(uint)spvCode.length,
+            code: spvCode.ptr
+        };
+        
+        WGPUShaderModuleDescriptor shaderModuleDescriptor = {
+            nextInChain: cast(const(WGPUChainedStruct)*)&spirvDescriptor,
+            label: label.toStringz,
+        };
+        
+        return wgpuDeviceCreateShaderModule(renderer.gpu.device, &shaderModuleDescriptor);
     }
 }

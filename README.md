@@ -1,7 +1,7 @@
 # wgpu-dlang
 [bindbc-wgpu](https://github.com/gecko0307/bindbc-wgpu) usage example - a PBR model rendering demo. Uses SDL2 for window creation.
 
-**Warning: highly experimental!** I've tested it on 64-bit Windows and Linux so far. It probably should work macOS, however has not been tested yet.
+**Warning: highly experimental!** I've tested it only on 64-bit Windows so far. It probably should work on Linux and macOS, however has not been tested yet.
 
 [![Screenshot](screenshot.jpg)](screenshot.jpg)
 

@@ -109,9 +109,10 @@ class GPU: Owner
         WGPURequiredLimits limits = {
             nextInChain: null,
             limits: {
-                maxTextureDimension1D: 2048,
-                maxTextureDimension2D: 2048,
-                maxTextureDimension3D: 2048
+                maxTextureDimension1D: 8192,
+                maxTextureDimension2D: 8192,
+                maxTextureDimension3D: 2048,
+                maxTextureArrayLayers: 2048
             }
         };
         WGPUDeviceDescriptor deviceDescriptor = {

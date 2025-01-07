@@ -76,20 +76,6 @@ fn cotangentFrame(N: vec3<f32>, p: vec3<f32>, uv: vec2<f32>) -> mat3x3<f32>
     T = normalize(T - N * dot(N, T));
     let B = normalize(cross(N, T));
     return mat3x3<f32>(T, B, N);
-    
-    /*
-    // Old version
-    let dp1 = dpdx(p);
-    let dp2 = dpdy(p);
-    let duv1 = dpdx(uv);
-    let duv2 = dpdy(uv);
-    let dp2perp = cross(dp2, N);
-    let dp1perp = cross(N, dp1);
-    let T = dp2perp * duv1.x + dp1perp * duv2.x;
-    let B = dp2perp * duv1.y + dp1perp * duv2.y;
-    let invmax = inverseSqrt(max(dot(T, T), dot(B, B)));
-    return mat3x3<f32>(T * invmax, B * invmax, N);
-    */
 }
 
 fn distributionGGX(N: vec3<f32>, H: vec3<f32>, roughness: f32) -> f32

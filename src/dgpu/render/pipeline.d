@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Timur Gafarov
+Copyright (c) 2021-2025 Timur Gafarov
 
 Boost Software License - Version 1.0 - August 17th, 2003
 Permission is hereby granted, free of charge, to any person or organization
@@ -112,14 +112,14 @@ class RenderPipeline: Owner
         };
         
         WGPUVertexState vertexState = {
-            module_: shader.modul,
+            module_: shader.modules.vertex,
             entryPoint: shader.vertexEntryPoint.toStringz,
             bufferCount: 1,
             buffers: &vertexBufferLayout
         };
         
         WGPUFragmentState fragmentState = {
-            module_: shader.modul,
+            module_: shader.modules.fragment,
             entryPoint: shader.fragmentEntryPoint.toStringz,
             targetCount: 1,
             targets: &colorTargetState

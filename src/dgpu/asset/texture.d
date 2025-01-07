@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Timur Gafarov
+Copyright (c) 2021-2025 Timur Gafarov
 
 Boost Software License - Version 1.0 - August 17th, 2003
 Permission is hereby granted, free of charge, to any person or organization
@@ -75,7 +75,7 @@ class Texture: Owner
         
         this.format = WGPUTextureFormat.RGBA8Unorm;
         
-        this.mipLevels = cast(uint)log2(max(width, height)) + 1;
+        this.mipLevels = cast(uint)log2(cast(double)max(width, height)) + 1;
         
         WGPUTextureDescriptor textureDescriptor =
         {

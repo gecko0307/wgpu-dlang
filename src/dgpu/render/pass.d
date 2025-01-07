@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Timur Gafarov
+Copyright (c) 2021-2025 Timur Gafarov
 
 Boost Software License - Version 1.0 - August 17th, 2003
 Permission is hereby granted, free of charge, to any person or organization
@@ -63,7 +63,14 @@ class RenderPass: Owner
         
         resource = New!PassResource(renderer, this);
         
-        simpleShader = New!Shader(readText("data/shaders/pbr.wgsl"), "vs_main", "fs_main", renderer, this);
+        //simpleShader = New!Shader(readText("data/shaders/pbr.wgsl"), "vs_main", "fs_main", renderer, this);
+        //simpleShader = New!Shader(cast(uint[])read("data/shaders/pbr.spv"), "vs_main", "fs_main", renderer, this);
+        
+        simpleShader = New!Shader(
+            cast(uint[])read("data/shaders/pbr.vert.spv"), "main",
+            cast(uint[])read("data/shaders/pbr.frag.spv"), "main",
+            renderer, this);
+        
         simplePipeline = New!RenderPipeline(this, simpleShader, renderer.screenRenderTarget, renderer, this);
         
         if (renderer.screenRenderTarget.colorFormat == WGPUTextureFormat.BGRA8UnormSrgb)

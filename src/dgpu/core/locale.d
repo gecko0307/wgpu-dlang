@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Timur Gafarov
+Copyright (c) 2021-2025 Timur Gafarov
 
 Boost Software License - Version 1.0 - August 17th, 2003
 Permission is hereby granted, free of charge, to any person or organization
@@ -34,17 +34,17 @@ import std.process;
 version(Windows)
 {
     extern(Windows) int GetLocaleInfoW(
-        in uint Locale,
-        in uint LCType,
+        const(uint) Locale,
+        const(uint) LCType,
         wchar* lpLCData,
-        in int cchData
+        const(int) cchData
     );
     
     extern(Windows) int GetLocaleInfoA(
-        in uint Locale,
-        in uint LCType,
+        const(uint) Locale,
+        const(uint) LCType,
         char* lpLCData,
-        in int cchData
+        const(int) cchData
     );
     
     enum uint LOCALE_USER_DEFAULT = 0x0400;
