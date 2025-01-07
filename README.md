@@ -7,7 +7,10 @@
 
 To run the application, you should install [SDL2](https://www.libsdl.org) and [wgpu-native 22.1](https://github.com/gfx-rs/wgpu-native). Under Windows, `SDL2.dll` and `wgpu_native.dll` can be copied to the application directory.
 
-## What is WebGPU?
+### What is WebGPU?
 It is a new low-level graphics and compute API for the Web that works on top of Vulkan, DirectX 12, or Metal. It exposes the generic computational facilities available in today's GPUs in a cross-platform way.
 
 [wgpu-native](https://github.com/gfx-rs/wgpu-native) is a native WebGPU implementation in Rust that compiles to a library with C API, which can be used in any language. This makes WebGPU a viable alternative to OpenGL for cross-platform graphics development.
+
+### Is this going to be a full-blown game engine?
+Probably. Let's wait for API to stabilize first.
