@@ -80,7 +80,7 @@ class Texture: Owner
         WGPUTextureDescriptor textureDescriptor =
         {
             nextInChain: null,
-            label: label.toStringz,
+            label: label,
             usage: WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst,
             dimension: WGPUTextureDimension.D2,
             size: WGPUExtent3D(width, height, numLayers),
@@ -93,7 +93,7 @@ class Texture: Owner
         WGPUTextureViewDescriptor textureViewDescriptor =
         {
             nextInChain: null,
-            label: label.toStringz,
+            label: label,
             format: format,
             dimension: WGPUTextureViewDimension.D2Array,
             baseMipLevel: 0,
@@ -112,7 +112,7 @@ class Texture: Owner
         WGPUSamplerDescriptor samplerDescriptor =
         {
             nextInChain: null,
-            label: label.toStringz,
+            label: label,
             addressModeU: WGPUAddressMode.Repeat,
             addressModeV: WGPUAddressMode.Repeat,
             addressModeW: WGPUAddressMode.Repeat,
@@ -143,7 +143,7 @@ class Texture: Owner
         
         WGPUBufferDescriptor textureBufferDescriptor = {
             nextInChain: null,
-            label: ("TextureBuffer_" ~ label).toStringz,
+            label: "TextureBuffer_" ~ label,
             usage: WGPUBufferUsage.Storage | WGPUBufferUsage.CopyDst | WGPUBufferUsage.CopySrc,
             size: img.data.length,
             mappedAtCreation: true
@@ -156,22 +156,19 @@ class Texture: Owner
         
         WGPUCommandEncoderDescriptor commandEncoderDescriptor = {
             nextInChain: null,
-            label: ("CommandEncoder_" ~ label).toStringz,
+            label: "CommandEncoder_" ~ label,
         };
         WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(gpu.device, &commandEncoderDescriptor);
         
-        WGPUImageCopyBuffer srcCopyBuffer = {
-            nextInChain: null,
+        WGPUTexelCopyBufferInfo srcCopyBuffer = {
             layout: {
-                nextInChain: null,
                 offset: 0,
                 bytesPerRow: width * 4,
                 rowsPerImage: height
             },
             buffer: textureBuffer
         };
-        WGPUImageCopyTexture dstCopyTexture = {
-            nextInChain: null,
+        WGPUTexelCopyTextureInfo dstCopyTexture = {
             texture: texture,
             mipLevel: 0,
             origin: WGPUOrigin3D(0, 0, layer),
@@ -183,7 +180,7 @@ class Texture: Owner
         
         WGPUCommandBufferDescriptor commandBufferDescriptor = {
             nextInChain: null,
-            label: ("CommandBuffer_" ~ label).toStringz
+            label: "CommandBuffer_" ~ label
         };
         WGPUCommandBuffer commandBuffer = wgpuCommandEncoderFinish(commandEncoder, &commandBufferDescriptor);
         wgpuQueueSubmit(gpu.queue, 1, &commandBuffer);

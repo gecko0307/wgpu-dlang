@@ -80,29 +80,28 @@ class Shader: Owner
     
     WGPUShaderModule moduleFromWGSL(string wgslCode)
     {
-        const(char)* shaderText = wgslCode.toStringz;
-        WGPUShaderModuleWGSLDescriptor wgslDescriptor = {
+        WGPUShaderSourceWGSL wgslDescriptor = {
             chain: {
                 next: null,
-                sType: WGPUSType.ShaderModuleWGSLDescriptor
+                sType: WGPUSType.ShaderSourceWGSL
             },
-            code: shaderText
+            code: wgslCode
         };
         
-        WGPUShaderModuleDescriptor shaderModuleDescriptor = {
+        WGPUShaderModuleDescriptor shaderSource = {
             nextInChain: cast(const(WGPUChainedStruct)*)&wgslDescriptor,
-            label: label.toStringz,
+            label: "shader.wgsl"
         };
         
-        return wgpuDeviceCreateShaderModule(renderer.gpu.device, &shaderModuleDescriptor);
+        return wgpuDeviceCreateShaderModule(renderer.gpu.device, &shaderSource);
     }
     
     WGPUShaderModule moduleFromSPIRV(uint[] spvCode)
     {
-        WGPUShaderModuleSPIRVDescriptor spirvDescriptor = {
+        WGPUShaderSourceSPIRV spirvDescriptor = {
             chain: {
                 next: null,
-                sType: WGPUSType.ShaderModuleSPIRVDescriptor
+                sType: WGPUSType.ShaderSourceSPIRV
             },
             codeSize: cast(uint)spvCode.length,
             code: spvCode.ptr
@@ -110,7 +109,7 @@ class Shader: Owner
         
         WGPUShaderModuleDescriptor shaderModuleDescriptor = {
             nextInChain: cast(const(WGPUChainedStruct)*)&spirvDescriptor,
-            label: label.toStringz,
+            label: "shader.spv",
         };
         
         return wgpuDeviceCreateShaderModule(renderer.gpu.device, &shaderModuleDescriptor);

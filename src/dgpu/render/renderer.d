@@ -63,7 +63,7 @@ WGPUBindGroupLayout createRendererResourceLayout(Renderer renderer)
     ];
     
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = {
-        label: renderer.label.toStringz,
+        label: renderer.label,
         entries: entries.ptr,
         entryCount: entries.length
     };
@@ -148,7 +148,7 @@ WGPUBindGroupLayout createMaterialResourceLayout(Renderer renderer)
     ];
     
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = {
-        label: renderer.label.toStringz,
+        label: renderer.label,
         entries: entries.ptr,
         entryCount: entries.length
     };
@@ -173,7 +173,7 @@ WGPUBindGroupLayout createPassResourceLayout(Renderer renderer)
     ];
     
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = {
-        label: renderer.label.toStringz,
+        label: renderer.label,
         entries: entries.ptr,
         entryCount: entries.length
     };
@@ -198,7 +198,7 @@ WGPUBindGroupLayout createGeometryResourceLayout(Renderer renderer)
     ];
     
     WGPUBindGroupLayoutDescriptor bindGroupLayoutDescriptor = {
-        label: renderer.label.toStringz,
+        label: renderer.label,
         entries: entries.ptr,
         entryCount: entries.length
     };
@@ -289,6 +289,7 @@ class Renderer: EventListener
         RenderBuffer colorBuffer = screenRenderTarget.nextBackBuffer();
         if (!colorBuffer.view)
             return;
+        
         RenderBuffer depthStencilBuffer = screenRenderTarget.depthStencilBuffer();
         if (!depthStencilBuffer.view)
             return;

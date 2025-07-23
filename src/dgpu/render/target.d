@@ -26,6 +26,7 @@ DEALINGS IN THE SOFTWARE.
 */
 module dgpu.render.target;
 
+import std.stdio;
 import bindbc.wgpu;
 import dlib.core.ownership;
 import dgpu.core.gpu;
@@ -111,13 +112,42 @@ class ScreenRenderTarget: Owner, RenderTarget
         
         return depthTextureView;
     }
+    
+    WGPUSurfaceTexture surfaceTexture;
 
     RenderBuffer nextBackBuffer()
     {
+        /*
         WGPUSurfaceTexture surfaceTexture;
         wgpuSurfaceGetCurrentTexture(gpu.surface, &surfaceTexture);
         while (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus.Success) {}
-        WGPUTextureView nextTextureView = wgpuTextureCreateView(surfaceTexture.texture, null);
+        */
+        
+        WGPUSurfaceTexture surfaceTexture;
+        wgpuSurfaceGetCurrentTexture(gpu.surface, &surfaceTexture);
+        switch(surfaceTexture.status)
+        {
+            case WGPUSurfaceGetCurrentTextureStatus.SuccessOptimal,
+                 WGPUSurfaceGetCurrentTextureStatus.SuccessSuboptimal:
+                // All good
+                break;
+            case WGPUSurfaceGetCurrentTextureStatus.Timeout,
+                 WGPUSurfaceGetCurrentTextureStatus.Outdated,
+                 WGPUSurfaceGetCurrentTextureStatus.Lost:
+                // Skip this frame, and re-configure surface
+                if (surfaceTexture.texture !is null)
+                    wgpuTextureRelease(surfaceTexture.texture);
+                configureSurface(surfaceFormat, width, height);
+                break;
+            default:
+                // Fatal error
+                writeln("Error: surfaceTexture.status = ", surfaceTexture.status);
+                break;
+        }
+        
+        WGPUTextureView nextTextureView = null;
+        if (surfaceTexture.texture !is null)
+            nextTextureView = wgpuTextureCreateView(surfaceTexture.texture, null);
         return RenderBuffer(nextTextureView, width, height);
     }
     

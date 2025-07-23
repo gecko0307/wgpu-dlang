@@ -126,32 +126,32 @@ void generateMipmap(GPU gpu, Texture texture)
     uint[] spvFrag = cast(uint[])read(mipmapFragModulePath);
     
     // Vertex shader module
-    WGPUShaderModuleSPIRVDescriptor spvVertexModuleDescriptor = {
+    WGPUShaderSourceSPIRV spvVertexModuleDescriptor = {
         chain: {
             next: null,
-            sType: WGPUSType.ShaderModuleSPIRVDescriptor
+            sType: WGPUSType.ShaderSourceSPIRV
         },
         codeSize: cast(uint)spvVert.length,
         code: spvVert.ptr
     };
     WGPUShaderModuleDescriptor vertexShaderModuleDescriptor = {
         nextInChain: cast(const(WGPUChainedStruct)*)&spvVertexModuleDescriptor,
-        label: toStringz("mipmap.vert.spv"),
+        label: "mipmap.vert.spv",
     };
     WGPUShaderModule vertexShaderModule = wgpuDeviceCreateShaderModule(gpu.device, &vertexShaderModuleDescriptor);
     
     // Fragment shader module
-    WGPUShaderModuleSPIRVDescriptor spvFragmentModuleDescriptor = {
+    WGPUShaderSourceSPIRV spvFragmentModuleDescriptor = {
         chain: {
             next: null,
-            sType: WGPUSType.ShaderModuleSPIRVDescriptor
+            sType: WGPUSType.ShaderSourceSPIRV
         },
         codeSize: cast(uint)spvFrag.length,
         code: spvFrag.ptr
     };
     WGPUShaderModuleDescriptor fragmentShaderModuleDescriptor = {
         nextInChain: cast(const(WGPUChainedStruct)*)&spvFragmentModuleDescriptor,
-        label: toStringz("mipmap.frag.spv"),
+        label: "mipmap.frag.spv",
     };
     WGPUShaderModule fragmentShaderModule = wgpuDeviceCreateShaderModule(gpu.device, &fragmentShaderModuleDescriptor);
     
@@ -289,12 +289,12 @@ void generateMipmap(GPU gpu, Texture texture)
     
     foreach (i; 1..mipLevelCount-1)
     {
-        WGPUImageCopyTexture copySource = {
+        WGPUTexelCopyTextureInfo copySource = {
             texture: mipTexture,
             mipLevel: i - 1
         };
         
-        WGPUImageCopyTexture copyDestination = {
+        WGPUTexelCopyTextureInfo copyDestination = {
             texture: texture.texture,
             mipLevel: i
         };

@@ -92,7 +92,7 @@ class VertexBuffer: Drawable
         attributesSize = cast(size_t)attributes.length * VertexAttribute.sizeof;
         WGPUBufferDescriptor attributeBufferDescriptor = {
             nextInChain: null,
-            label: ("AttributeBuffer_" ~ label).toStringz,
+            label: "AttributeBuffer_" ~ label,
             usage: WGPUBufferUsage.Vertex | WGPUBufferUsage.CopyDst,
             size: attributesSize,
             mappedAtCreation: true
@@ -105,7 +105,7 @@ class VertexBuffer: Drawable
         indicesSize = cast(size_t)indices.length * uint.sizeof;
         WGPUBufferDescriptor indexBufferDescriptor = {
             nextInChain: null,
-            label: ("IndexBuffer_" ~ label).toStringz,
+            label: "IndexBuffer_" ~ label,
             usage: WGPUBufferUsage.Index | WGPUBufferUsage.CopyDst,
             size: indicesSize,
             mappedAtCreation: true

@@ -113,14 +113,14 @@ class RenderPipeline: Owner
         
         WGPUVertexState vertexState = {
             module_: shader.modules.vertex,
-            entryPoint: shader.vertexEntryPoint.toStringz,
+            entryPoint: shader.vertexEntryPoint,
             bufferCount: 1,
             buffers: &vertexBufferLayout
         };
         
         WGPUFragmentState fragmentState = {
             module_: shader.modules.fragment,
-            entryPoint: shader.fragmentEntryPoint.toStringz,
+            entryPoint: shader.fragmentEntryPoint,
             targetCount: 1,
             targets: &colorTargetState
         };
@@ -142,7 +142,7 @@ class RenderPipeline: Owner
         WGPUDepthStencilState depthStencilState = {
             nextInChain: null,
             format: renderTarget.depthStencilFormat,
-            depthWriteEnabled: true,
+            depthWriteEnabled: WGPUOptionalBool.True,
             depthCompare: WGPUCompareFunction.Less,
             stencilFront: stencilStateFront,
             stencilBack: stencilStateBack,
@@ -154,7 +154,7 @@ class RenderPipeline: Owner
         };
         
         WGPURenderPipelineDescriptor renderPipelineDescriptor = {
-            label: label.toStringz,
+            label: label,
             layout: pipelineLayout,
             vertex: vertexState,
             primitive: {

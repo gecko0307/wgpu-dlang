@@ -75,7 +75,7 @@ class RendererResource: Owner, Resource
         
         WGPUBufferDescriptor uniformBufferDescriptor = {
             nextInChain: null,
-            label: label.toStringz,
+            label: label,
             usage: WGPUBufferUsage.Uniform | WGPUBufferUsage.CopyDst,
             size: RendererUniforms.sizeof,
             mappedAtCreation: true
@@ -95,7 +95,7 @@ class RendererResource: Owner, Resource
             textureView: null
         };
         WGPUBindGroupDescriptor bindGroupDescriptor = {
-            label: label.toStringz,
+            label: label,
             layout: renderer.rendererResourceLayout,
             entries: &entry,
             entryCount: 1
@@ -137,7 +137,7 @@ class PassResource: Owner, Resource
         
         WGPUBufferDescriptor uniformBufferDescriptor = {
             nextInChain: null,
-            label: label.toStringz,
+            label: label,
             usage: WGPUBufferUsage.Uniform | WGPUBufferUsage.CopyDst,
             size: PassUniforms.sizeof,
             mappedAtCreation: true
@@ -155,7 +155,7 @@ class PassResource: Owner, Resource
         };
         
         WGPUBindGroupDescriptor bindGroupDescriptor = {
-            label: label.toStringz,
+            label: label,
             layout: renderer.passResourceLayout,
             entries: &entry,
             entryCount: 1
@@ -198,7 +198,7 @@ class MaterialResource: Owner, Resource
         
         WGPUBufferDescriptor uniformBufferDescriptor = {
             nextInChain: null,
-            label: label.toStringz,
+            label: label,
             usage: WGPUBufferUsage.Uniform | WGPUBufferUsage.CopyDst,
             size: MaterialUniforms.sizeof,
             mappedAtCreation: true
@@ -241,7 +241,7 @@ class MaterialResource: Owner, Resource
             }
         ];
         WGPUBindGroupDescriptor bindGroupDescriptor = {
-            label: label.toStringz,
+            label: label,
             layout: renderer.materialResourceLayout,
             entries: entries.ptr,
             entryCount: entries.length
@@ -285,7 +285,7 @@ class GeometryResource: Owner, Resource
         
         WGPUBufferDescriptor uniformBufferDescriptor = {
             nextInChain: null,
-            label: label.toStringz,
+            label: label,
             usage: WGPUBufferUsage.Uniform | WGPUBufferUsage.CopyDst,
             size: GeometryUniforms.sizeof,
             mappedAtCreation: true
@@ -306,7 +306,7 @@ class GeometryResource: Owner, Resource
         };
         
         WGPUBindGroupDescriptor bindGroupDescriptor = {
-            label: label.toStringz,
+            label: label,
             layout: renderer.geometryResourceLayout,
             entries: &uniformBufferBindGroupEntry,
             entryCount: 1

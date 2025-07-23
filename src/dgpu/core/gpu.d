@@ -93,7 +93,14 @@ class GPU: Owner
             compatibleSurface: surface,
             powerPreference: WGPUPowerPreference.HighPerformance
         };
-        wgpuInstanceRequestAdapter(instance, &adapterOptions, &requestAdapterCallback, cast(void*)&adapter);
+        WGPURequestAdapterCallbackInfo requestAdapterCallbackInfo = {
+            nextInChain: null,
+            mode: WGPUCallbackMode.WaitAnyOnly,
+            callback: &requestAdapterCallback,
+            userdata1: cast(void*)&adapter,
+            userdata2: null
+        };
+        wgpuInstanceRequestAdapter(instance, &adapterOptions, requestAdapterCallbackInfo);
         return adapter;
     }
     
@@ -103,26 +110,33 @@ class GPU: Owner
             chain: {
                 next: null,
                 sType: cast(WGPUSType)WGPUNativeSType.DeviceExtras
-            },
-            tracePath: null,
-        };
-        WGPURequiredLimits limits = {
-            nextInChain: null,
-            limits: {
-                maxTextureDimension1D: 8192,
-                maxTextureDimension2D: 8192,
-                maxTextureDimension3D: 2048,
-                maxTextureArrayLayers: 2048
             }
+        };
+        WGPULimits limits = {
+            nextInChain: null
+        };
+        WGPUQueueDescriptor defaultQueueDesc = {
+            nextInChain: null,
+            label: "DefaultQueue"
         };
         WGPUDeviceDescriptor deviceDescriptor = {
             nextInChain: cast(const(WGPUChainedStruct)*)&deviceExtras,
+            label: "Device",
             requiredFeatureCount: 0,
             requiredFeatures: null,
-            requiredLimits: &limits
+            requiredLimits: &limits,
+            defaultQueue: defaultQueueDesc,
+            deviceLostCallback: null
         };
         WGPUDevice device = null;
-        wgpuAdapterRequestDevice(adapter, &deviceDescriptor, &requestDeviceCallback, cast(void*)&device);
+        WGPURequestDeviceCallbackInfo requestDeviceCallbackInfo = {
+            nextInChain: null,
+            mode: WGPUCallbackMode.WaitAnyOnly,
+            callback: &requestDeviceCallback,
+            userdata1: cast(void*)&device,
+            userdata2: null
+        };
+        wgpuAdapterRequestDevice(adapter, &deviceDescriptor, requestDeviceCallbackInfo);
         return device;
     }
     
@@ -142,6 +156,107 @@ class GPU: Owner
         wgpuCommandBufferRelease(commandBuffer);
     }
     
+    protected WGPUSurface createSurface(SDL_SysWMinfo wmInfo)
+    {
+        WGPUSurface surface;
+        version(Windows)
+        {
+            if (wmInfo.subsystem == SDL_SYSWM_WINDOWS)
+            {
+                auto win_hwnd = wmInfo.info.win.window;
+                auto win_hinstance = wmInfo.info.win.hinstance;
+                
+                WGPUSurfaceSourceWindowsHWND surfaceSrc = {
+                    chain: {
+                        next: null,
+                        sType: WGPUSType.SurfaceSourceWindowsHWND
+                    },
+                    hinstance: win_hinstance,
+                    hwnd: win_hwnd
+                };
+                
+                WGPUSurfaceDescriptor sfd = {
+                    label: null,
+                    nextInChain: cast(const(WGPUChainedStruct)*)&surfaceSrc
+                };
+                surface = wgpuInstanceCreateSurface(instance, &sfd);
+            }
+            else
+            {
+                application.logger.error("Unsupported subsystem, sorry");
+            }
+        }
+        else version(linux)
+        {
+            if (wmInfo.subsystem == SDL_SYSWM_WAYLAND)
+            {
+                auto waylandDisplay = wmInfo.info.wl.wl_display;
+                auto waylandSurface = wmInfo.info.wl.wl_surface;
+                
+                WGPUSurfaceSourceWaylandSurface surfaceSrc = {
+                    chain: {
+                        next: null,
+                        sType: WGPUSType.SurfaceSourceWaylandSurface
+                    },
+                    display: waylandDisplay,
+                    surface: waylandSurface
+                };
+                
+                WGPUSurfaceDescriptor sfd = {
+                    label: null,
+                    nextInChain: cast(const(WGPUChainedStruct)*)&surfaceSrc
+                };
+                surface = wgpuInstanceCreateSurface(instance, &sfd);
+            }
+            else
+            {
+               /*
+                * Just try to create X11 surface and hope for the best.
+                * System might use XCB, so wmInfo.subsystem will contain SDL_SYSWM_UNKNOWN.
+                */
+                auto x11_display = wmInfo.info.x11.display;
+                auto x11_window = wmInfo.info.x11.window;
+                
+                WGPUSurfaceSourceXlibWindow surfaceSrc = {
+                    chain: {
+                        next: null,
+                        sType: WGPUSType.SurfaceSourceXlibWindow
+                    },
+                    display: x11_display,
+                    window: x11_window
+                };
+                
+                WGPUSurfaceDescriptor sfd = {
+                    label: null,
+                    nextInChain: cast(const(WGPUChainedStruct)*)&surfaceSrc
+                };
+                surface = wgpuInstanceCreateSurface(instance, &sfd);
+            }
+        }
+        else version(OSX)
+        {
+            SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
+            auto metalLayer = SDL_RenderGetMetalLayer(renderer);
+            
+            WGPUSurfaceSourceMetalLayer surfaceSrc = {
+                chain: {
+                    next: null,
+                    sType: WGPUSType.SurfaceSourceMetalLayer
+                },
+                layer: metalLayer
+            };
+            WGPUSurfaceDescriptor sfd = {
+                label: null,
+                nextInChain: cast(const(WGPUChainedStruct)*)&surfaceSrc
+            };
+            surface = wgpuInstanceCreateSurface(instance, &sfd);
+            
+            SDL_DestroyRenderer(renderer);
+        }
+        return surface;
+    }
+    
+    /*
     protected WGPUSurface createSurface(SDL_SysWMinfo wmInfo)
     {
         WGPUSurface surface;
@@ -220,45 +335,46 @@ class GPU: Owner
         }
         return surface;
     }
+    */
 }
 
 private extern(C)
 {
-    void logCallback(WGPULogLevel level, const(char)* msg, void* user_data)
+    void logCallback(WGPULogLevel level, WGPUStringView message, void* userdata)
     {
-        const (char)[] level_message;
+        const(char)[] level_message;
         switch(level)
         {
-            case WGPULogLevel.Off:level_message = "off";break;
-            case WGPULogLevel.Error:level_message = "error";break;
-            case WGPULogLevel.Warn:level_message = "warn";break;
-            case WGPULogLevel.Info:level_message = "info";break;
-            case WGPULogLevel.Debug:level_message = "debug";break;
-            case WGPULogLevel.Trace:level_message = "trace";break;
-            default: level_message = "-";
+            case WGPULogLevel.Off: level_message = "off"; break;
+            case WGPULogLevel.Error: level_message = "error"; break;
+            case WGPULogLevel.Warn: level_message = "warn"; break;
+            case WGPULogLevel.Info: level_message = "info"; break;
+            case WGPULogLevel.Debug: level_message = "debug"; break;
+            case WGPULogLevel.Trace: level_message = "trace"; break;
+            default: level_message = "-"; break;
         }
-        writeln("WebGPU ", level_message, ": ",  to!string(msg));
+        writeln("WebGPU ", level_message, ": ", message);
     }
     
-    void requestAdapterCallback(WGPURequestAdapterStatus status, WGPUAdapter adapter, const(char)* message, void* userdata)
+    void requestAdapterCallback(WGPURequestAdapterStatus status, void* adapter, WGPUStringView message, void* userdata1, void* userdata2)
     {
         if (status == WGPURequestAdapterStatus.Success)
-            *cast(WGPUAdapter*)userdata = adapter;
+            *cast(WGPUAdapter*)userdata1 = adapter;
         else
         {
             writeln(status);
-            writeln(to!string(message));
+            writeln(message);
         }
     }
 
-    void requestDeviceCallback(WGPURequestDeviceStatus status, WGPUDevice device, const(char)* message, void* userdata)
+    void requestDeviceCallback(WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2)
     {
         if (status == WGPURequestDeviceStatus.Success)
-            *cast(WGPUDevice*)userdata = device;
+            *cast(WGPUDevice*)userdata1 = device;
         else
         {
             writeln(status);
-            writeln(to!string(message));
+            writeln(message);
         }
     }
 }
