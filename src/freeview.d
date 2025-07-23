@@ -45,7 +45,7 @@ class FreeviewComponent: EventListener
 {
     int prevMouseX;
     int prevMouseY;
-    float mouseSensibility = 0.01f;
+    float mouseSensibility = 0.1f;
     
     Vector3f center;
     float distance;
