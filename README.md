@@ -15,4 +15,4 @@ It is a new low-level graphics and compute API for the Web that works on top of 
 [wgpu-native](https://github.com/gfx-rs/wgpu-native) is a native WebGPU implementation in Rust that compiles to a library with C API, which can be used in any language. This potentially makes WebGPU a viable and future-proof alternative to OpenGL for cross-platform graphics development.
 
 ### Is this going to be a full-blown game engine?
-Probably. Let's wait for the API to stabilize first.
+Maybe. Let's wait for the API to stabilize first.
