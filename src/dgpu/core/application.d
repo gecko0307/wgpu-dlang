@@ -99,7 +99,7 @@ class Application: EventListener
         }
         
         WGPUSupport wgpuSup = loadWGPU();
-        if (wgpuSup != WGPUSupport.wgpu24)
+        if (wgpuSup != WGPUSupport.wgpu25)
         {
             if (wgpuSup == WGPUSupport.badLibrary)
                 logger.log("Failed to load some WGPU functions");
